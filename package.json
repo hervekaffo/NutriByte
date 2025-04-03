@@ -1,0 +1,31 @@
+{
+  "name": "nutribyte",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Food and Nutrition tracking application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "server": "nodemon backend/server.js",
+    "client": "npm start --prefix frontend",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hervekaffo/NutriByte.git"
+  },
+  "author": "Herve Kaffo",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hervekaffo/NutriByte/issues"
+  },
+  "homepage": "https://github.com/hervekaffo/NutriByte#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "dotenv": "^16.4.7",
+    "nodemon": "^3.1.9"
+  }
+}
