@@ -8,7 +8,9 @@
     "start": "node backend/server.js",
     "server": "nodemon backend/server.js",
     "client": "npm start --prefix frontend",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "data:import": "node backend/seeder",
+    "data:destroy": "node backend/seeder -d"
   },
   "repository": {
     "type": "git",
@@ -21,6 +23,8 @@
   },
   "homepage": "https://github.com/hervekaffo/NutriByte#readme",
   "dependencies": {
+    "bcrypt": "^5.1.1",
+    "colors": "^1.4.0",
     "express": "^5.1.0",
     "mongoose": "^8.13.1"
   },

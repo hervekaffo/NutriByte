@@ -2,27 +2,24 @@ import express from 'express';
 import dotenv from 'dotenv';
 dotenv.config();
 import connectDB from './config/db.js';
-import foods from './data/branded_food.js';
+import foodRoutes from './routes/foodRoutes.js';
+import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+
+
 const port = process.env.PORT || 5000;
 
 connectDB();
 const app = express();
 
-app.get('/api/foods', (req, res) => {
-    res.json(foods);
-});
 
-app.get('/api/foods/:id', (req, res) => {
-    const food = foods.find((f) => f.fdcId === Number(req.params.id));
-    if (food) {
-        res.json(food);
-    } else {
-        res.status(404).json({ message: 'Food not found' });
-    }
-});
+
+app.use('/api/foods', foodRoutes);
 
 app.get('/', (req, res) => {
     res.send('API is running...');
 });
+
+app.use(notFound);
+ app.use(errorHandler);
 
 app.listen(port, () => console.log(`Server running on port ${port}`));

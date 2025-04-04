@@ -30,7 +30,7 @@ const macroSchema = new mongoose.Schema(
   }
 );
 
-const Macro = mongoose.model('Macro', macroSchema);
+// Removed duplicate declaration of Macro
 
 const foodSchema = new mongoose.Schema(
   {
@@ -68,8 +68,9 @@ const foodSchema = new mongoose.Schema(
   }
 );
 
-module.exports = {
-  Food: mongoose.model('Food', foodSchema),
-  Macro,
-};
+const Food = mongoose.model('Food', foodSchema);
+const Macro = mongoose.model('Macro', macroSchema);
+
+export default Food;
+export { Macro };
   
