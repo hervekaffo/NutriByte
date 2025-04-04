@@ -1,15 +1,26 @@
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Row, Col, Image, ListGroup, Card, Button } from 'react-bootstrap';
 //import Rating from '../components/Rating';
-import foods from '../branded_food';
+import axios from 'axios';
 
 const FoodScreen = () => {
   const { id: foodId } = useParams();
-  const food = foods.find((f) => f.fdcId === Number(foodId));
-  if (!food) {
-    return <h2>Food not found</h2>;
-  }
+  const [food, setFood] = useState({});
+
+  useEffect(() => {
+    const fetchFood = async () => {
+      try {
+        const { data } = await axios.get(`/api/foods/${foodId}`);
+        setFood(data);
+      } catch (error) {
+        console.error('Error fetching food:', error);
+      }
+    };
+
+    fetchFood();
+  }, [foodId]);
 
   return (
     <>

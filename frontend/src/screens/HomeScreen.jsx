@@ -1,8 +1,25 @@
+import { useState, useEffect } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import Food from '../components/Food';
-import foods from '../branded_food';
+import axios from 'axios';
+import { use } from 'react';
 
 const HomeScreen = () => {
+  const [foods, setFoods] = useState([]);
+
+  useEffect(() => {
+    const fetchFoods = async () => {
+      try {
+        const { data } = await axios.get('/api/foods');
+        setFoods(data);
+      } catch (error) {
+        console.error('Error fetching foods:', error);
+      }
+    };
+
+    fetchFoods();
+  }
+  , []);
   return (
     <>
       <h1>Branded Foods</h1>
@@ -15,6 +32,7 @@ const HomeScreen = () => {
       </Row>
     </>
   );
+ 
 };
 
 export default HomeScreen;
