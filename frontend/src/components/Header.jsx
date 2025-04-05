@@ -1,5 +1,6 @@
 import { Navbar, Nav, Container } from 'react-bootstrap';
-import { FaShoppingCart, FaUser } from 'react-icons/fa';
+import { FaUser } from 'react-icons/fa';
+import { FaUtensils as FaKitchenSet } from 'react-icons/fa';
 import { LinkContainer } from 'react-router-bootstrap';
 
 const Header = () => {
@@ -15,7 +16,7 @@ const Header = () => {
             <Nav className='ms-auto'>
               <LinkContainer to='/cart'>
                 <Nav.Link>
-                  <FaShoppingCart /> Cart
+                <FaKitchenSet /> Meal
                 </Nav.Link>
               </LinkContainer>
               <LinkContainer to='/login'>

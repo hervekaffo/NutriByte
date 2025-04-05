@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
     <Card style={{ width: '18rem' }}>
       <Card.Img variant="top" src="" alt="Food Image"/>
       <Card.Body>
-      <Link to={`/food/${food.fdcId}`}>
+      <Link to={`/food/${food._id}`}>
         <Card.Title >{food.fdcId}</Card.Title>
       </Link>
         <Card.Text as='div' className='food-title'>

@@ -1,33 +1,33 @@
-import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Row, Col, Image, ListGroup, Card, Button } from 'react-bootstrap';
+import { useGetFoodDetailsQuery } from '../slices/foodSlice';
 //import Rating from '../components/Rating';
-import axios from 'axios';
+import { FaArrowLeft } from "react-icons/fa";
+import Loader from '../components/Loader';
+import Message from '../components/Message';
 
 const FoodScreen = () => {
   const { id: foodId } = useParams();
-  const [food, setFood] = useState({});
-
-  useEffect(() => {
-    const fetchFood = async () => {
-      try {
-        const { data } = await axios.get(`/api/foods/${foodId}`);
-        setFood(data);
-      } catch (error) {
-        console.error('Error fetching food:', error);
-      }
-    };
-
-    fetchFood();
-  }, [foodId]);
+  
+  const { data: food, isLoading, error } = useGetFoodDetailsQuery(foodId);
 
   return (
     <>
-      <Link to='/' className='btn btn-light my-3'>
+      <Link className='btn btn-light my-3' to='/'>
+        <FaArrowLeft />
+
         Go Back
       </Link>
-      <Row>
+      {isLoading ? (
+        <Loader />
+      ) : error ? (
+        <Message variant='danger'>
+          {error?.data.message || error.error}  
+        </Message>
+      ) : (
+        <>
+        <Row>
         <Col md={5}>
           <Image src='' alt={food.brandOwner} fluid />
         </Col>
@@ -81,6 +81,9 @@ const FoodScreen = () => {
           </Card>
         </Col>
       </Row>
+      
+    </>
+      )}
     </>
   );
 };
