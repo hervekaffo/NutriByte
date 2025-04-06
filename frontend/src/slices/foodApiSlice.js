@@ -1,7 +1,7 @@
-import { FOODS_URL } from "../constants";
+import { FOODS_URL } from "../constants.js";
 import { apiSlice } from "./apiSclice.js";
 
-export const foodSlice = apiSlice.injectEndpoints({
+export const foodApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getFoods: builder.query({
       query: () => ({
@@ -22,4 +22,4 @@ export const foodSlice = apiSlice.injectEndpoints({
 export const {
   useGetFoodsQuery,
   useGetFoodDetailsQuery
-} = foodSlice;
+} = foodApiSlice;

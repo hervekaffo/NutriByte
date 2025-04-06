@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
  import foods from './data/branded_food.js';
  import User from './models/userModel.js';
  import Food from './models/foodModel.js'; 
-
+ import Meal from './models/mealModel.js';
 import connectDB from './config/db.js';
 
 dotenv.config();
