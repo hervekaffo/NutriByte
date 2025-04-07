@@ -19,7 +19,6 @@
 - User profile 
 - Admin product management
 - Admin user management
-- Admin Order details page
 - Database seeder (products & users)
 
 ## Usage
