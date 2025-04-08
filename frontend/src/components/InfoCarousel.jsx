@@ -23,7 +23,7 @@ const InfoCarousel = () => {
       style={{ height: '500px', objectFit: 'cover' }}
     />
     <Carousel.Caption>
-      <h3>Monitor yoour Calories Intake</h3>
+      <h3>Monitor your Calories Intake</h3>
       <p>See You calories intake over the course of time.</p>
     </Carousel.Caption>
   </Carousel.Item>

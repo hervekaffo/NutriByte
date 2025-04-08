@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -21,9 +21,12 @@ import Loader from '../components/Loader';
 import Message from '../components/Message';
 import Meta from '../components/Meta';
 import { addToMeal } from '../slices/mealSlice';
+import { getConsistentImage } from '../utils/imageUtils';
 
 const FoodScreen = () => {
   const { id: foodId } = useParams();
+  const location = useLocation();
+  const passedImage = location.state?.image; 
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -65,6 +68,24 @@ const FoodScreen = () => {
     }
   };
 
+  const [imageList, setImageList] = useState([]);
+
+useEffect(() => {
+  const fetchImages = async () => {
+    try {
+      const res = await fetch('/food_images', {
+        headers: { Accept: 'application/json' },
+      });
+      if (!res.ok) throw new Error('Failed to fetch images');
+      const data = await res.json();
+      setImageList(data.map((img) => ({ src: img, width: 300, height: 300 })));
+    } catch (err) {
+      console.error('Image fetch error:', err);
+    }
+  };
+  fetchImages();
+}, []);
+
   return (
     <>
       <Link className='btn btn-light my-3' to='/'>
@@ -80,9 +101,24 @@ const FoodScreen = () => {
         <>
           <Meta title={food.fdcId} description={food.description} />
           <Row>
-            <Col md={6}>
-              <Image src='/images/sample.jpg' alt={food.fdcId} fluid />
-            </Col>
+          <Col md={6}>
+  {imageList.length > 0 ? (
+    <Image
+      src={`/food_images/${getConsistentImage(imageList, food._id)}`}
+      alt={food.fdcId}
+      fluid
+      style={{ height: '300px', objectFit: 'cover' }}
+    />
+  ) : (
+    <Image
+      src='/images/sample.jpg'
+      alt='Default'
+      fluid
+      style={{ height: '300px', objectFit: 'cover' }}
+    />
+  )}
+</Col>
+
             <Col md={3}>
               <ListGroup variant='flush'>
                 <ListGroup.Item>

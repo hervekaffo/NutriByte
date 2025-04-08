@@ -21,6 +21,17 @@ const SaveLogScreen = () => {
     <FormContainer>
       <h3>Finish and Save To your Meals Log</h3>
       <Form onSubmit={submitHandler}>
+        <Form.Group className='my-2' controlId='mealType'>
+          <Form.Label>Meal Type</Form.Label>
+          <Form.Control as='select' required>
+            <option value=''>Select...</option>
+            <option value='Breakfast'>Breakfast</option>
+            <option value='Lunch'>Lunch</option>
+            <option value='Dinner'>Dinner</option>
+            <option value='Snack'>Snack</option>
+          </Form.Control>
+        </Form.Group>
+
         <Form.Group className='my-2' controlId='address'>
           <Form.Label>Calories</Form.Label>
           <Form.Control
@@ -30,7 +41,7 @@ const SaveLogScreen = () => {
         </Form.Group>
 
         <Form.Group className='my-2' controlId='city'>
-          <Form.Label> Satured Fat</Form.Label>
+          <Form.Label>Satured Fat</Form.Label>
           <Form.Control
             type='text'
             required
@@ -44,7 +55,6 @@ const SaveLogScreen = () => {
             required
           ></Form.Control>
         </Form.Group>
-
 
         <Button type='submit' variant='primary'>
           Save and Finish

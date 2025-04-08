@@ -5,7 +5,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useLogoutMutation } from '../slices/usersApiSlice';
 import { logout } from '../slices/authSlice';
 import SearchBox from './SearchBox';
-import logo from '../assets/logo.png';
 import { resetMeal } from '../slices/mealSlice';
 
 const Header = () => {

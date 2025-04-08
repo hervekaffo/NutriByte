@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { getConsistentImage } from '../utils/imageUtils';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -34,6 +36,24 @@ const MealScreen = () => {
     navigate('/login?redirect=/savelogs');
   };
 
+  const [imageList, setImageList] = useState([]);
+
+useEffect(() => {
+  const fetchImages = async () => {
+    try {
+      const res = await fetch('/food_images', {
+        headers: { Accept: 'application/json' },
+      });
+      if (!res.ok) throw new Error('Failed to fetch images');
+      const data = await res.json();
+      setImageList(data.map((img) => ({ src: img })));
+    } catch (err) {
+      console.error('Image fetch error:', err);
+    }
+  };
+  fetchImages();
+}, []);
+
   return (
     <Row>
       <Col md={8}>
@@ -48,7 +68,17 @@ const MealScreen = () => {
               <ListGroup.Item key={item._id}>
                 <Row>
                   <Col md={2}>
-                    <Image src='/images/sample.jpg' alt={item.brandOwner} fluid rounded />
+                  <Image
+  src={
+    imageList.length > 0
+      ? `/food_images/${getConsistentImage(imageList, item._id)}`
+      : '/images/sample.jpg'
+  }
+  alt={item.brandOwner}
+  fluid
+  rounded
+  style={{ width: '100%', height: '100px', objectFit: 'cover' }} // Set width, height, and objectFit to make the image consistent
+/>
                   </Col>
                   <Col md={3}>
                     <Link to={`/meal/${item._id}`}>{item.fdcId}</Link>
