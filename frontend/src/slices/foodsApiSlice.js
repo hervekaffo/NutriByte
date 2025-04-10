@@ -54,6 +54,7 @@ export const foodsApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Food'],
     }),
+    // Top rated foods endpoint
     getTopFoods: builder.query({
       query: () => `${FOODS_URL}/top`,
       keepUnusedDataFor: 5,
