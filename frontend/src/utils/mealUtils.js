@@ -13,7 +13,7 @@ export const updateMeal = (state) => {
   );
   state.itemsPrice = addDecimals(itemsPrice);
 
-  // Calculate the shipping price
+  // Calculate the price
   const shippingPrice = itemsPrice > 100 ? 0 : 10;
   state.shippingPrice = addDecimals(shippingPrice);
 

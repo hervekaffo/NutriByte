@@ -1,7 +1,26 @@
+/* Merged index.css for NutiByte Branding */
+
+/* Global Styles */
 main {
   min-height: 80vh;
+  /* Added a subtle linear gradient background matching the brand */
+  background: linear-gradient(135deg, #bde0e0 0%, #ffffff 100%);
 }
 
+/* Headings and Paragraphs */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Roboto', sans-serif;  /* Update with your brand's heading font if different */
+  font-weight: 700;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+p {
+  font-family: 'Open Sans', sans-serif; /* Update with your preferred body font */
+  line-height: 1.6;
+  color: #333;
+}
+
+/* Rating Styles */
 .rating span {
   margin: 0.1rem;
 }
@@ -16,18 +35,21 @@ main {
   padding-left: 0.5rem;
 }
 
+/* Food Title */
 .food-title {
-  height: 2.5em; /* Set a fixed height */
-  overflow: hidden; /* Hide overflow content */
-  text-overflow: ellipsis; /* Add ellipsis for long text */
-  white-space: nowrap; /* Prevent wrapping */
+  height: 2.5em; /* Fixed height for consistency */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* Table Styling */
 table td,
 table th {
   text-align: center;
 }
 
+/* Review Section */
 .review {
   margin-top: 30px;
 }
@@ -43,6 +65,7 @@ table th {
   margin-top: 10px;
 }
 
+/* Carousel Captions */
 .carousel-caption {
   position: absolute;
   width: 100%;
@@ -50,4 +73,62 @@ table th {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
+}
+
+/* Navigation / Navbar Customizations */
+.navbar {
+  background-color: var(--bs-primary) !important;  
+}
+
+.navbar-brand {
+  font-family: 'Montserrat', sans-serif;  /* A modern brand font */
+  font-size: 1.5rem;
+  color: var(--bs-secondary-text) !important;
+}
+
+.navbar-nav .nav-link {
+  font-size: 1.1rem;
+  color: var(--bs-secondary-text) !important;
+}
+
+.navbar-nav .nav-link:hover {
+  color: var(--bs-link-hover-color) !important;
+}
+
+/* Footer Styling */
+footer {
+  background-color: var(--bs-dark);
+  color: var(--bs-light);
+  padding: 1rem 0;
+  text-align: center;
+}
+
+/* Form Controls Customizations */
+.form-control {
+  border-color: var(--bs-primary);
+}
+
+.form-control:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 5px rgba(42, 157, 143, 0.5);
+}
+
+/* Updated Navigation / Navbar Customizations */
+.navbar {
+  background-color: #3d4941 !important; /* A vibrant, greener color */
+}
+
+.navbar-brand {
+  font-family: 'Montserrat', sans-serif;  /*  brand font */
+  font-size: 1.5rem;
+  color: #fff !important; /* Navbar brand text becomes white */
+}
+
+.navbar-nav .nav-link {
+  font-size: 1.1rem;
+  color: #fff !important; /* Nav link text set to white */
+}
+
+.navbar-nav .nav-link:hover {
+  color: #a4a150 !important; /* Optionally, a lighter shade on hover */
 }

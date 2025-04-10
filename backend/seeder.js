@@ -20,11 +20,11 @@ const importData = async () => {
 
     const adminUser = createdUsers[0]._id;
 
-    const sampleFoods = foods.map((product) => {
+    const sampleFoods = foods.map((food) => {
       return { ...food, user: adminUser };
     });
 
-    await Food.insertMany(sampleProducts);
+    await Food.insertMany(sampleFoods);
 
     console.log('Data Imported!'.green.inverse);
     process.exit();

@@ -43,7 +43,7 @@ const mealSlice = createSlice({
       localStorage.setItem('meal', JSON.stringify(state));
     },
     // NOTE: here we need to reset state for when a user logs out so the next
-    // user doesn't inherit the previous users Meal and shipping
+    // user doesn't inherit the previous users Meal and
     resetMeal: (state) => (state = initialState),
   },
 });

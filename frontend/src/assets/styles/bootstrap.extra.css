@@ -1,0 +1,66 @@
+:root,
+[data-bs-theme='light'] {
+  /* Brand Colors */
+  --bs-primary: #2a9d8f;         /* A teal-green matching your logo */
+  --bs-secondary: #264653;       /* A dark slate for secondary accents */
+  --bs-danger: #e76f51;          /* A warm accent color (for errors or highlights) */
+  --bs-success: #2a9d8f;         /* Reusing primary for success messages */
+  --bs-info: #3498db;            /* You may keep info as a blue variant */
+  --bs-warning: #f39c12;         /* A friendly yellow/orange for warnings */
+  --bs-light: #f4f4f4;
+  --bs-dark: #2d3436;
+
+  /* Text and background adjustments based on the new colors */
+  --bs-primary-text: #1b6650;
+  --bs-secondary-text: #ffffff;
+  --bs-link-color: #2a9d8f;
+  --bs-link-hover-color: #1b6650;
+
+  /* Subtle backgrounds */
+  --bs-primary-bg-subtle: #bde0e0;
+  --bs-secondary-bg-subtle: #465d67;
+  --bs-success-bg-subtle: #bde0e0;
+  --bs-info-bg-subtle: #d0e8ff;
+  --bs-warning-bg-subtle: #fff4d9;
+  --bs-danger-bg-subtle: #ffdede;
+}
+
+/* Optionally adjust dark theme variables as well */
+[data-bs-theme='dark'] {
+  --bs-body-bg: #2d3436;
+  --bs-body-color: #f4f4f4;
+  --bs-link-color: #2a9d8f;
+  --bs-link-hover-color: #bde0e0;
+}
+
+/* Customized headings */
+h1, .h1 {
+  color: var(--bs-primary);
+}
+h2, .h2,
+h3, .h3,
+h4, .h4 {
+  color: var(--bs-secondary);
+}
+
+/* Customized buttons */
+.btn-primary {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+.btn-primary:hover {
+  background-color: #1b6650;
+  border-color: #1b6650;
+}
+
+/* Customized links */
+a {
+  color: var(--bs-link-color);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--bs-link-hover-color);
+  text-decoration: underline;
+}
+
+/* Add any additional customizations below as needed */

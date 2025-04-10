@@ -21,7 +21,7 @@ const Header = () => {
       await logoutApiCall().unwrap();
       dispatch(logout());
       // NOTE: here we need to reset meal state for when a user logs out so the next
-      // user doesn't inherit the previous users meal and shipping
+      // user doesn't inherit the previous users meal and
       dispatch(resetMeal());
       navigate('/login');
     } catch (err) {

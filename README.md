@@ -68,7 +68,7 @@ npm run build
 
 ### Seed Database
 
-You can use the following commands to seed the database with some sample users and products as well as destroy all data
+You can use the following commands to seed the database with some sample users and foods as well as destroy all data
 
 ```
 # Import data
