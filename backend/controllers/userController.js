@@ -17,7 +17,16 @@ const authUser = asyncHandler(async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      picture: user.picture,
       isAdmin: user.isAdmin,
+      age: user.age,
+      weight: user.weight,
+      height: user.height,
+      gender: user.gender,
+      activityLevel: user.activityLevel,
+      goal: user.goal,
+      dailyCalorieGoal: user.dailyCalorieGoal,
+      dailyMacrosGoal: user.dailyMacrosGoal,
     });
   } else {
     res.status(401);
@@ -29,29 +38,43 @@ const authUser = asyncHandler(async (req, res) => {
 // @route   POST /api/users
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+  const {
+    name, email, password, picture,
+    age, weight, height, gender,
+    activityLevel, goal,
+    dailyCalorieGoal, dailyMacrosGoal
+  } = req.body;
 
-  const userExists = await User.findOne({ email });
-
-  if (userExists) {
+  const exists = await User.findOne({ email });
+  if (exists) {
     res.status(400);
     throw new Error('User already exists');
   }
 
   const user = await User.create({
-    name,
-    email,
-    password,
+    name, email, password, picture,
+    age, weight, height, gender,
+    activityLevel, goal,
+    dailyCalorieGoal,
+    dailyMacrosGoal,
   });
 
   if (user) {
     generateToken(res, user._id);
-
     res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
+      picture: user.picture,
       isAdmin: user.isAdmin,
+      age: user.age,
+      weight: user.weight,
+      height: user.height,
+      gender: user.gender,
+      activityLevel: user.activityLevel,
+      goal: user.goal,
+      dailyCalorieGoal: user.dailyCalorieGoal,
+      dailyMacrosGoal: user.dailyMacrosGoal,
     });
   } else {
     res.status(400);
@@ -78,7 +101,16 @@ const getUserProfile = asyncHandler(async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      picture: user.picture,
       isAdmin: user.isAdmin,
+      age: user.age,
+      weight: user.weight,
+      height: user.height,
+      gender: user.gender,
+      activityLevel: user.activityLevel,
+      goal: user.goal,
+      dailyCalorieGoal: user.dailyCalorieGoal,
+      dailyMacrosGoal: user.dailyMacrosGoal,
     });
   } else {
     res.status(404);

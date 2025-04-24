@@ -27,7 +27,7 @@ const BFood = ({ food }) => {
           try {
             const data = await response.json();
             setImageList(data.map(image => ({ src: image, width: 300, height: 300 })));
-            console.log('Fetched images:', data);  
+            //console.log('Fetched images:', data);  
           } catch (error) {
           console.error('Unexpected content type:', contentType);
           setImageList([]); // Ensure imageList is reset to an empty array

@@ -16,7 +16,7 @@ const authSlice = createSlice({
     },
     logout: (state, action) => {
       state.userInfo = null;
-      // NOTE: here we need to also remove the cart from storage so the next
+      // NOTE: here we need to also remove the meal from storage so the next
       // logged in user doesn't inherit the previous users
       localStorage.clear();
     },

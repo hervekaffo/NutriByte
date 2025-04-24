@@ -148,7 +148,7 @@ const createFoodReview = asyncHandler(async (req, res) => {
 // @route   GET /api/foods/top
 // @access  Public
 const getTopFoods = asyncHandler(async (req, res) => {
-  const foods = await Food.find({}).sort({ rating: -1 }).limit(3);
+  const foods = await Food.find({}).sort({ rating: -1 }).limit(4);
 
   res.json(foods);
 });

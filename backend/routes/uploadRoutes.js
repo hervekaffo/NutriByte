@@ -1,49 +1,32 @@
+// Description: This file contains the upload routes for handling image uploads.
 import path from 'path';
 import express from 'express';
 import multer from 'multer';
-
 const router = express.Router();
 
 const storage = multer.diskStorage({
   destination(req, file, cb) {
-    cb(null, 'uploads/');
+    cb(null, 'images/user_images/');
   },
   filename(req, file, cb) {
-    cb(
-      null,
-      `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
-    );
+    cb(null, `user-${Date.now()}${path.extname(file.originalname)}`);
   },
 });
 
-function fileFilter(req, file, cb) {
-  const filetypes = /jpe?g|png|webp/;
-  const mimetypes = /image\/jpe?g|image\/png|image\/webp/;
-
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = mimetypes.test(file.mimetype);
-
-  if (extname && mimetype) {
-    cb(null, true);
-  } else {
-    cb(new Error('Images only!'), false);
-  }
-}
+const fileFilter = (req, file, cb) => {
+  const allowed = /jpe?g|png|webp/;
+  const ext  = allowed.test(path.extname(file.originalname).toLowerCase());
+  const type = allowed.test(file.mimetype);
+  if (ext && type) cb(null, true);
+  else cb(new Error('Only images allowed'), false);
+};
 
 const upload = multer({ storage, fileFilter });
-const uploadSingleImage = upload.single('image');
 
-router.post('/', (req, res) => {
-  uploadSingleImage(req, res, function (err) {
-    if (err) {
-      return res.status(400).send({ message: err.message });
-    }
-
-    res.status(200).send({
-      message: 'Image uploaded successfully',
-      image: `/${req.file.path}`,
-    });
-  });
+router.post('/', upload.single('picture'), (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+  // serve later from /images/user_images/<filename>
+  res.status(201).json({ picture: `/images/user_images/${req.file.filename}` });
 });
 
 export default router;

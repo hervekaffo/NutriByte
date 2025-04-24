@@ -11,9 +11,9 @@ const Meta = ({ title, description, keywords }) => {
 };
 
 Meta.defaultProps = {
-  title: 'Welcome To ProShop',
-  description: 'We sell the best products for cheap',
-  keywords: 'electronics, buy electronics, cheap electroincs',
+  title: 'Welcome To NutriByte',
+  description: 'Nutition Decision Platform',
+  keywords: 'Healthy, Nutrition, Food, Diet',
 };
 
 export default Meta;

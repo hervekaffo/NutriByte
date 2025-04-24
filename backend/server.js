@@ -25,7 +25,7 @@ app.use('/api/upload', uploadRoutes);
 
 if (process.env.NODE_ENV === 'production') {
   const __dirname = path.resolve();
-  app.use('/uploads', express.static('/var/data/uploads'));
+  app.use('/images/user_images', express.static('/var/data/images/user_images'));
   app.use(express.static(path.join(__dirname, '/frontend/build')));
 
   app.get('*', (req, res) =>
@@ -33,7 +33,7 @@ if (process.env.NODE_ENV === 'production') {
   );
 } else {
   const __dirname = path.resolve();
-  app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
+  app.use('/images/user_images', express.static(path.join(__dirname, '/images/user_images')));
   app.get('/', (req, res) => {
     res.send('API is running....');
   });
