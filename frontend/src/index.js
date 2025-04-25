@@ -1,3 +1,5 @@
+// src/index.js
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './assets/styles/bootstrap.custom.css';
@@ -27,28 +29,29 @@ import UserEditScreen from './screens/admin/UserEditScreen';
 import store from './store';
 import { Provider } from 'react-redux';
 import { PayPalScriptProvider } from '@paypal/react-paypal-js';
+import NutritionLogsScreen from './screens/NutritionLogsScreen'; // ⬅️ Added import
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path='/' element={<App />}>
-      <Route index={true} path='/' element={<HomeScreen />} />
+      <Route index element={<HomeScreen />} />
       <Route path='/search/:keyword' element={<HomeScreen />} />
       <Route path='/page/:pageNumber' element={<HomeScreen />} />
-      <Route
-        path='/search/:keyword/page/:pageNumber'
-        element={<HomeScreen />}
-      />
+      <Route path='/search/:keyword/page/:pageNumber' element={<HomeScreen />} />
       <Route path='/food/:id' element={<FoodScreen />} />
       <Route path='/meal' element={<MealScreen />} />
       <Route path='/login' element={<LoginScreen />} />
       <Route path='/register' element={<RegisterScreen />} />
+
       {/* Registered users */}
-      <Route path='' element={<PrivateRoute />}>
+      <Route element={<PrivateRoute />}>
         <Route path='/savelogs' element={<SaveLogScreen />} />
+        <Route path='/nutrition-logs' element={<NutritionLogsScreen />} /> {/* ⬅️ Nutrition Log route */}
         <Route path='/profile' element={<ProfileScreen />} />
       </Route>
+
       {/* Admin users */}
-      <Route path='' element={<AdminRoute />}>
+      <Route element={<AdminRoute />}>
         <Route path='/admin/mealloglist' element={<MaelLogsScreen />} />
         <Route path='/admin/userlist' element={<UserListScreen />} />
         <Route path='/admin/user/:id/edit' element={<UserEditScreen />} />

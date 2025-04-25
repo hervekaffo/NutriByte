@@ -8,12 +8,10 @@ import SearchBox from "./SearchBox";
 import { resetMeal } from "../slices/mealSlice";
 
 const Header = () => {
-  const { mealItems } = useSelector((state) => state.meal);
-  const { userInfo } = useSelector((state) => state.auth);
-  //console.log(userInfo.picture);
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { mealItems } = useSelector((state) => state.meal);
+  const { userInfo } = useSelector((state) => state.auth);
 
   const [logoutApiCall] = useLogoutMutation();
 
@@ -21,14 +19,26 @@ const Header = () => {
     try {
       await logoutApiCall().unwrap();
       dispatch(logout());
-      // NOTE: here we need to reset meal state for when a user logs out so the next
-      // user doesn't inherit the previous users meal and
       dispatch(resetMeal());
       navigate("/login");
     } catch (err) {
       console.error(err);
     }
   };
+
+  // Total items in current meal
+  const mealCount = mealItems.reduce((sum, item) => sum + item.qty, 0);
+
+  const mealTitle = (
+    <>
+      <FaKitchenSet /> My Meal
+      {mealCount > 0 && (
+        <Badge pill bg="success" style={{ marginLeft: "5px" }}>
+          {mealCount}
+        </Badge>
+      )}
+    </>
+  );
 
   return (
     <header>
@@ -46,42 +56,51 @@ const Header = () => {
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
               <SearchBox />
-              <Nav.Link as={Link} to="/meal">
-                <FaKitchenSet /> Meal
-                {mealItems.length > 0 && (
-                  <Badge pill bg="success" style={{ marginLeft: "5px" }}>
-                    {mealItems.reduce((a, c) => a + c.qty, 0)}
-                  </Badge>
-                )}
-              </Nav.Link>
+
+              {userInfo && (
+                <NavDropdown title={mealTitle} id="mealmenu">
+                  <NavDropdown.Item as={Link} to="/meal">
+                    Build Meal
+                  </NavDropdown.Item>
+                  <NavDropdown.Item as={Link} to="/savelogs">
+                    Save Meal Log
+                  </NavDropdown.Item>
+                  <NavDropdown.Item as={Link} to="/nutrition-logs">
+                    View Nutrition Logs
+                  </NavDropdown.Item>
+                </NavDropdown>
+              )}
+
               {userInfo ? (
-                <>
-                  <NavDropdown
-                    title={
-                      <>
-                        <Image
-                          src={userInfo.picture ? userInfo.picture: "/images/user_images/default.jpg"}
-                          roundedCircle
-                          style={{
-                            width: "30px",
-                            height: "30px",
-                            objectFit: "cover",
-                            marginRight: "8px",
-                          }}
-                        />
-                        {userInfo.name}
-                      </>
-                    }
-                    id="username"
-                  >
-                    <NavDropdown.Item as={Link} to="/profile">
-                      Profile
-                    </NavDropdown.Item>
-                    <NavDropdown.Item onClick={logoutHandler}>
-                      Logout
-                    </NavDropdown.Item>
-                  </NavDropdown>
-                </>
+                <NavDropdown
+                  title={
+                    <>
+                      <Image
+                        src={
+                          userInfo.picture
+                            ? userInfo.picture
+                            : "/images/user_images/default.jpg"
+                        }
+                        roundedCircle
+                        style={{
+                          width: "30px",
+                          height: "30px",
+                          objectFit: "cover",
+                          marginRight: "8px",
+                        }}
+                      />
+                      {userInfo.name}
+                    </>
+                  }
+                  id="username"
+                >
+                  <NavDropdown.Item as={Link} to="/profile">
+                    Profile
+                  </NavDropdown.Item>
+                  <NavDropdown.Item onClick={logoutHandler}>
+                    Logout
+                  </NavDropdown.Item>
+                </NavDropdown>
               ) : (
                 <Nav.Link as={Link} to="/login">
                   <FaUser /> Sign In

@@ -8,6 +8,8 @@ import foodRoutes from './routes/foodRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+import mealRoutes from './routes/mealRoutes.js';                   
+import nutritionLogRoutes from './routes/nutritionLogRoutes.js';
 
 const port = process.env.PORT || 5000;
 
@@ -22,6 +24,8 @@ app.use(cookieParser());
 app.use('/api/foods', foodRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/meals', mealRoutes);                                 
+app.use('/api/nutrition-logs', nutritionLogRoutes); 
 
 if (process.env.NODE_ENV === 'production') {
   const __dirname = path.resolve();

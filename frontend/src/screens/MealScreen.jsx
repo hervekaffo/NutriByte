@@ -126,7 +126,7 @@ useEffect(() => {
                 disabled={mealItems.length === 0}
                 onClick={checkoutHandler}
               >
-                Submit
+                Save to Meal Log
               </Button>
             </ListGroup.Item>
           </ListGroup>
