@@ -1,138 +1,196 @@
-import { useEffect, useState } from 'react';
-import { getConsistentImage } from '../utils/imageUtils';
+// src/screens/MealScreen.jsx
+
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 import {
   Row,
   Col,
-  ListGroup,
-  Image,
   Form,
   Button,
+  ListGroup,
   Card,
+  Image,
 } from 'react-bootstrap';
-import { FaTrash } from 'react-icons/fa';
-import Message from '../components/Message';
+import { useDispatch, useSelector } from 'react-redux';
+import { useGetFoodsQuery } from '../slices/foodsApiSlice';
 import { addToMeal, removeFromMeal } from '../slices/mealSlice';
+import Loader from '../components/Loader';
+import Message from '../components/Message';
+import { getConsistentImage } from '../utils/imageUtils';
+
+const LinkImage = ({ food, imageList }) => {
+  const src =
+    imageList.length > 0
+      ? `/food_images/${getConsistentImage(imageList, food._id)}`
+      : '/images/sample.jpg';
+  return (
+    <Link to={`/food/${food._id}`}>
+      <Card.Img
+        src={src}
+        alt={food.brandOwner}
+        variant="top"
+        style={{ height: '150px', objectFit: 'cover' }}
+      />
+    </Link>
+  );
+};
 
 const MealScreen = () => {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { mealItems } = useSelector((state) => state.meal);
 
-  const meal = useSelector((state) => state.meal);
-  const { mealItems } = meal;
+  // Search state
+  const [keyword, setKeyword] = useState('');
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+  } = useGetFoodsQuery({ keyword, pageNumber: 1 });
 
-  // NOTE: no need for an async function here as we are not awaiting the
-  // resolution of a Promise
-  const addToMealHandler = (meal, qty) => {
-    dispatch(addToMeal({ ...meal, qty }));
+  // Load images once
+  const [imageList, setImageList] = useState([]);
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const res = await fetch('/food_images', {
+          headers: { Accept: 'application/json' },
+        });
+        const imgs = await res.json();
+        setImageList(imgs.map((src) => ({ src })));
+      } catch (err) {
+        console.error('Image fetch error:', err);
+      }
+    };
+    fetchImages();
+  }, []);
+
+  const searchHandler = (e) => {
+    e.preventDefault();
+    refetch();
   };
 
-  const removeFromMealHandler = (id) => {
+  const addHandler = (food) => {
+    dispatch(addToMeal({ ...food, qty: 1 }));
+  };
+
+  const removeHandler = (id) => {
     dispatch(removeFromMeal(id));
   };
 
-  const checkoutHandler = () => {
-    navigate('/login?redirect=/savelogs');
-  };
-
-  const [imageList, setImageList] = useState([]);
-
-useEffect(() => {
-  const fetchImages = async () => {
-    try {
-      const res = await fetch('/food_images', {
-        headers: { Accept: 'application/json' },
-      });
-      if (!res.ok) throw new Error('Failed to fetch images');
-      const data = await res.json();
-      setImageList(data.map((img) => ({ src: img })));
-    } catch (err) {
-      console.error('Image fetch error:', err);
-    }
-  };
-  fetchImages();
-}, []);
-
   return (
-    <Row>
-      <Col md={8}>
-        <h1 style={{ marginBottom: '20px' }}>Meal Foods</h1>
-        {mealItems.length === 0 ? (
-          <Message>
-            Your Meal is empty Please add some food <Link to='/'>Go Back</Link>
-          </Message>
-        ) : (
-          <ListGroup variant='flush'>
-            {mealItems.map((item) => (
-              <ListGroup.Item key={item._id}>
-                <Row>
-                  <Col md={2}>
-                  <Image
-  src={
-    imageList.length > 0
-      ? `/food_images/${getConsistentImage(imageList, item._id)}`
-      : '/images/sample.jpg'
-  }
-  alt={item.brandOwner}
-  fluid
-  rounded
-  style={{ width: '100%', height: '100px', objectFit: 'cover' }} // Set width, height, and objectFit to make the image consistent
-/>
+    <>
+      <Row className="mb-3">
+        <Col>
+          <h1>Build Your Meal</h1>
+        </Col>
+        <Col className="text-end">
+          <Button
+            variant="success"
+            onClick={() => navigate('/savelogs')}
+            disabled={mealItems.length === 0}
+            className="me-2"
+          >
+            Save Meal Log
+          </Button>
+          <Button variant="outline-primary" as={Link} to="/nutrition-logs">
+            View Meal Logs
+          </Button>
+        </Col>
+      </Row>
+
+      <Row>
+        {/* Left: Search + results */}
+        <Col md={8}>
+          <Form onSubmit={searchHandler} className="d-flex mb-3">
+            <Form.Control
+              type="text"
+              placeholder="Search foods..."
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+            />
+            <Button type="submit" variant="primary" className="ms-2">
+              Search
+            </Button>
+          </Form>
+
+          {isLoading ? (
+            <Loader />
+          ) : error ? (
+            <Message variant="danger">
+              {error?.data?.message || error.error}
+            </Message>
+          ) : (
+            <Row>
+              {data.foods.map((food) => {
+                const alreadyAdded = mealItems.find((i) => i._id === food._id);
+                return (
+                  <Col key={food._id} sm={12} md={6} lg={4} xl={3}>
+                    <Card className="mb-3 p-2">
+                      <LinkImage food={food} imageList={imageList} />
+                      <Card.Body>
+                        <Card.Title>{food.brandOwner}</Card.Title>
+                        <Card.Text>{food.brandedFoodCategory}</Card.Text>
+                        <Button
+                          onClick={() => addHandler(food)}
+                          disabled={!!alreadyAdded}
+                        >
+                          {alreadyAdded ? 'Added' : 'Add to Meal'}
+                        </Button>
+                      </Card.Body>
+                    </Card>
                   </Col>
-                  <Col md={3}>
-                    <Link to={`/meal/${item._id}`}>{item.fdcId}</Link>
-                  </Col>
-                  <Col md={2}>{item.brandedFoodCategory}</Col>
-                  <Col md={2}>
-                    <Form.Control
-                      type='number'
-                      value={item.qty}
-                      min='1'
-                      max={item.countInStock}
-                      onChange={(e) =>
-                        addToMealHandler(item, Number(e.target.value))
-                      }
-                    />
-                  </Col>
-                  <Col md={2}>
-                    <Button
-                      type='button'
-                      variant='light'
-                      onClick={() => removeFromMealHandler(item._id)}
-                    >
-                      <FaTrash />
-                    </Button>
-                  </Col>
-                </Row>
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
-        )}
-      </Col>
-      <Col md={4}>
-        <Card>
-          <ListGroup variant='flush'>
-            <ListGroup.Item>
-              <h2>
-                Subtotal ({mealItems.reduce((acc, item) => acc + item.qty, 0)})
-                items
-              </h2>
-            </ListGroup.Item>
-            <ListGroup.Item>
-              <Button
-                type='button'
-                className='btn-block'
-                disabled={mealItems.length === 0}
-                onClick={checkoutHandler}
-              >
-                Save to Meal Log
-              </Button>
-            </ListGroup.Item>
-          </ListGroup>
-        </Card>
-      </Col>
-    </Row>
+                );
+              })}
+            </Row>
+          )}
+        </Col>
+
+        {/* Right: Current meal */}
+        <Col md={4}>
+          <h2>Your Meal</h2>
+          {mealItems.length === 0 ? (
+            <Message>Your meal is empty</Message>
+          ) : (
+            <ListGroup variant="flush">
+              {mealItems.map((item) => (
+                <ListGroup.Item key={item._id}>
+                  <Row className="align-items-center">
+                    <Col xs={2}>
+                      <Image
+                        src={
+                          imageList.length > 0
+                            ? `/food_images/${getConsistentImage(
+                                imageList,
+                                item._id
+                              )}`
+                            : '/images/sample.jpg'
+                        }
+                        alt={item.brandOwner}
+                        fluid
+                        rounded
+                        style={{ height: '50px', objectFit: 'cover' }}
+                      />
+                    </Col>
+                    <Col xs={6}>{item.brandOwner}</Col>
+                    <Col xs={4} className="text-end">
+                      <Button
+                        variant="light"
+                        size="sm"
+                        onClick={() => removeHandler(item._id)}
+                      >
+                        Remove
+                      </Button>
+                    </Col>
+                  </Row>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          )}
+        </Col>
+      </Row>
+    </>
   );
 };
 

@@ -1,9 +1,10 @@
 import { Navbar, Nav, Container, NavDropdown, Badge, Image } from "react-bootstrap";
-import { FaUser, FaUtensils as FaKitchenSet } from "react-icons/fa";
+import { FaUser, FaUtensils as FaKitchenSet, FaBullseye } from "react-icons/fa";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import { useLogoutMutation } from "../slices/usersApiSlice";
 import { logout } from "../slices/authSlice";
+import { apiSlice } from "../slices/apiSlice";
 import SearchBox from "./SearchBox";
 import { resetMeal } from "../slices/mealSlice";
 
@@ -19,6 +20,7 @@ const Header = () => {
     try {
       await logoutApiCall().unwrap();
       dispatch(logout());
+      dispatch(apiSlice.util.resetApiState());            // ⬅️ clear RTK Query cache
       dispatch(resetMeal());
       navigate("/login");
     } catch (err) {
@@ -56,7 +58,9 @@ const Header = () => {
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
               <SearchBox />
-
+              <Nav.Link as={Link} to="/goals">
+                <FaBullseye /> My Goal
+              </Nav.Link>
               {userInfo && (
                 <NavDropdown title={mealTitle} id="mealmenu">
                   <NavDropdown.Item as={Link} to="/meal">

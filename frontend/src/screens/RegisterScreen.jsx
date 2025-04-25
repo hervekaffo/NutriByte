@@ -1,132 +1,253 @@
-import { useState } from 'react';
-import { Form, Button, Row, Col } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import Message from '../components/Message';
-import Loader from '../components/Loader';
-import FormContainer from '../components/FormContainer';
-import { useRegisterMutation, useUploadMutation } from '../slices/usersApiSlice';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Form, Button, Row, Col, Spinner } from 'react-bootstrap';
+import { useRegisterMutation } from '../slices/usersApiSlice';
 import { setCredentials } from '../slices/authSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import Message from '../components/Message';
+import FormContainer from '../components/FormContainer';
 
 const RegisterScreen = () => {
-  const [form, setForm] = useState({
-    name: '', email: '', password: '',
-    age: '', weight: '', height: '',
-    gender: 'Male', activityLevel: '',
-    goal: 'Maintain Weight',
-    dailyCalorieGoal: '', protein: '', carbs: '', fats: '',
-  });
-  const [pictureFile, setPictureFile] = useState(null);
-  const [uploadUserImage] = useUploadMutation();
-  const [register, { isLoading }] = useRegisterMutation();
+  const [name, setName]               = useState('');
+  const [email, setEmail]             = useState('');
+  const [password, setPassword]       = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [age, setAge]                 = useState('');
+  const [weight, setWeight]           = useState('');
+  const [height, setHeight]           = useState('');
+  const [gender, setGender]           = useState('');
+  const [activityLevel, setActivityLevel] = useState('');
+  const [goal, setGoal]               = useState('');
+  const [dailyCalorieGoal, setDailyCalorieGoal] = useState('');
+  const [protein, setProtein]         = useState('');
+  const [carbs, setCarbs]             = useState('');
+  const [fats, setFats]               = useState('');
+  const [message, setMessage]         = useState(null);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirect = new URLSearchParams(location.search).get('redirect') || '/';
 
-  const onChange = e => setForm({ ...form, [e.target.name]: e.target.value });
-  const onFileChange = e => setPictureFile(e.target.files[0]);
+  const [register, { isLoading }] = useRegisterMutation();
+  const { userInfo } = useSelector((state) => state.auth);
 
-  const submitHandler = async e => {
-    e.preventDefault();
-    let picture = '/images/user_images/default.jpg';
-
-    if (pictureFile) {
-      const fd = new FormData();
-      fd.append('picture', pictureFile);
-      const res = await uploadUserImage(fd).unwrap();
-      picture = res.picture;
+  useEffect(() => {
+    if (userInfo) {
+      navigate(redirect);
     }
+  }, [navigate, userInfo, redirect]);
 
-    const registerData = {
-      ...form,
-      picture,
-      dailyMacrosGoal: {
-        protein: Number(form.protein),
-        carbs: Number(form.carbs),
-        fats: Number(form.fats),
-      }
-    };
-
-    const user = await register(registerData).unwrap();
-    dispatch(setCredentials(user));
-    navigate('/');
+  const submitHandler = async (e) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      setMessage('Passwords do not match');
+      return;
+    }
+    try {
+      const payload = {
+        name,
+        email,
+        password,
+        age: Number(age),
+        weight: Number(weight),
+        height: Number(height),
+        gender,
+        activityLevel,
+        goal,
+        dailyCalorieGoal: dailyCalorieGoal ? Number(dailyCalorieGoal) : undefined,
+        dailyMacrosGoal: {
+          protein: protein ? Number(protein) : 0,
+          carbs:   carbs   ? Number(carbs)   : 0,
+          fats:    fats    ? Number(fats)    : 0,
+        },
+      };
+      const user = await register(payload).unwrap();
+      dispatch(setCredentials(user));
+      navigate(redirect);
+    } catch (err) {
+      setMessage(err.data?.message || err.error);
+    }
   };
 
   return (
     <FormContainer>
-      <h1>Register</h1>
-      {isLoading && <Loader />}
+      <h1>Sign Up</h1>
+      {message && <Message variant="danger">{message}</Message>}
       <Form onSubmit={submitHandler}>
-        {/* Name, Email, Password */}
-        <Form.Group controlId='name'><Form.Label>Name</Form.Label>
-          <Form.Control name='name' value={form.name} onChange={onChange} required />
-        </Form.Group>
-        <Form.Group controlId='email'><Form.Label>Email</Form.Label>
-          <Form.Control type='email' name='email' value={form.email} onChange={onChange} required />
-        </Form.Group>
-        <Form.Group controlId='password'><Form.Label>Password</Form.Label>
-          <Form.Control type='password' name='password' value={form.password} onChange={onChange} required />
+
+        <Form.Group controlId="name" className="my-2">
+          <Form.Label>Name</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
         </Form.Group>
 
-        {/* Picture Upload */}
-        <Form.Group controlId='picture'><Form.Label>Picture</Form.Label>
-          <Form.Control type='file' onChange={onFileChange} accept='image/*' />
+        <Form.Group controlId="email" className="my-2">
+          <Form.Label>Email Address</Form.Label>
+          <Form.Control
+            type="email"
+            placeholder="Enter email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
         </Form.Group>
 
-        {/* Profile fields */}
-        <Row>
-          <Col><Form.Group controlId='age'><Form.Label>Age</Form.Label>
-            <Form.Control type='number' name='age' value={form.age} onChange={onChange} required />
-          </Form.Group></Col>
-          <Col><Form.Group controlId='height'><Form.Label>Height (cm)</Form.Label>
-            <Form.Control type='number' name='height' value={form.height} onChange={onChange} required />
-          </Form.Group></Col>
-          <Col><Form.Group controlId='weight'><Form.Label>Weight (kg)</Form.Label>
-            <Form.Control type='number' name='weight' value={form.weight} onChange={onChange} required />
-          </Form.Group></Col>
-        </Row>
-
-        <Form.Group controlId='gender'><Form.Label>Gender</Form.Label>
-          <Form.Control as='select' name='gender' value={form.gender} onChange={onChange}>
-            <option>Male</option><option>Female</option><option>Other</option>
-          </Form.Control>
+        <Form.Group controlId="password" className="my-2">
+          <Form.Label>Password</Form.Label>
+          <Form.Control
+            type="password"
+            placeholder="Enter password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
         </Form.Group>
 
-        <Form.Group controlId='activityLevel'><Form.Label>Activity Level</Form.Label>
-          <Form.Control as='select' name='activityLevel' value={form.activityLevel} onChange={onChange}>
-            <option value=''>Select...</option>
-            <option>Sedentary</option><option>Lightly Active</option>
-            <option>Moderately Active</option><option>Very Active</option>
-          </Form.Control>
+        <Form.Group controlId="confirmPassword" className="my-2">
+          <Form.Label>Confirm Password</Form.Label>
+          <Form.Control
+            type="password"
+            placeholder="Confirm password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+          />
         </Form.Group>
 
-        <Form.Group controlId='goal'><Form.Label>Goal</Form.Label>
-          <Form.Control as='select' name='goal' value={form.goal} onChange={onChange}>
+        <Form.Group controlId="age" className="my-2">
+          <Form.Label>Age</Form.Label>
+          <Form.Control
+            type="number"
+            value={age}
+            onChange={(e) => setAge(e.target.value)}
+            required
+          />
+        </Form.Group>
+
+        <Form.Group controlId="weight" className="my-2">
+          <Form.Label>Weight (kg)</Form.Label>
+          <Form.Control
+            type="number"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+            required
+          />
+        </Form.Group>
+
+        <Form.Group controlId="height" className="my-2">
+          <Form.Label>Height (cm)</Form.Label>
+          <Form.Control
+            type="number"
+            value={height}
+            onChange={(e) => setHeight(e.target.value)}
+            required
+          />
+        </Form.Group>
+
+        <Form.Group controlId="gender" className="my-2">
+          <Form.Label>Gender</Form.Label>
+          <Form.Select
+            value={gender}
+            onChange={(e) => setGender(e.target.value)}
+            required
+          >
+            <option value="">Choose…</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+          </Form.Select>
+        </Form.Group>
+
+        <Form.Group controlId="activityLevel" className="my-2">
+          <Form.Label>Activity Level</Form.Label>
+          <Form.Select
+            value={activityLevel}
+            onChange={(e) => setActivityLevel(e.target.value)}
+            required
+          >
+            <option value="">Choose…</option>
+            <option>Sedentary</option>
+            <option>Lightly Active</option>
+            <option>Moderately Active</option>
+            <option>Very Active</option>
+          </Form.Select>
+        </Form.Group>
+
+        <Form.Group controlId="goal" className="my-2">
+          <Form.Label>Goal</Form.Label>
+          <Form.Select
+            value={goal}
+            onChange={(e) => setGoal(e.target.value)}
+            required
+          >
+            <option value="">Choose…</option>
             <option>Lose Weight</option>
             <option>Maintain Weight</option>
             <option>Gain Muscle</option>
-          </Form.Control>
+          </Form.Select>
         </Form.Group>
 
-        <Form.Group controlId='dailyCalorieGoal'><Form.Label>Daily Calorie Goal</Form.Label>
-          <Form.Control type='number' name='dailyCalorieGoal' value={form.dailyCalorieGoal} onChange={onChange} required />
+        <Form.Group controlId="dailyCalorieGoal" className="my-2">
+          <Form.Label>Daily Calorie Goal</Form.Label>
+          <Form.Control
+            type="number"
+            value={dailyCalorieGoal}
+            onChange={(e) => setDailyCalorieGoal(e.target.value)}
+          />
         </Form.Group>
 
         <Row>
-          <Col><Form.Group controlId='protein'><Form.Label>Protein (g)</Form.Label>
-            <Form.Control type='number' name='protein' value={form.protein} onChange={onChange} /></Form.Group>
+          <Col md={4}>
+            <Form.Group controlId="protein" className="my-2">
+              <Form.Label>Protein (g)</Form.Label>
+              <Form.Control
+                type="number"
+                value={protein}
+                onChange={(e) => setProtein(e.target.value)}
+              />
+            </Form.Group>
           </Col>
-          <Col><Form.Group controlId='carbs'><Form.Label>Carbs (g)</Form.Label>
-            <Form.Control type='number' name='carbs' value={form.carbs} onChange={onChange} /></Form.Group>
+          <Col md={4}>
+            <Form.Group controlId="carbs" className="my-2">
+              <Form.Label>Carbs (g)</Form.Label>
+              <Form.Control
+                type="number"
+                value={carbs}
+                onChange={(e) => setCarbs(e.target.value)}
+              />
+            </Form.Group>
           </Col>
-          <Col><Form.Group controlId='fats'><Form.Label>Fats (g)</Form.Label>
-            <Form.Control type='number' name='fats' value={form.fats} onChange={onChange} /></Form.Group>
+          <Col md={4}>
+            <Form.Group controlId="fats" className="my-2">
+              <Form.Label>Fats (g)</Form.Label>
+              <Form.Control
+                type="number"
+                value={fats}
+                onChange={(e) => setFats(e.target.value)}
+              />
+            </Form.Group>
           </Col>
         </Row>
 
-        <Button type='submit' className='mt-3'>Register</Button>
+        <Button type="submit" variant="primary" className="my-3" disabled={isLoading}>
+          {isLoading ? <Spinner animation="border" size="sm" /> : 'Register'}
+        </Button>
       </Form>
+
+      <Row className="py-3">
+        <Col>
+          Have an account?{' '}
+          <Link to={redirect ? `/login?redirect=${redirect}` : '/login'}>Log In</Link>
+        </Col>
+      </Row>
     </FormContainer>
   );
-};
+}
 
 export default RegisterScreen;

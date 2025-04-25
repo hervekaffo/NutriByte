@@ -2,7 +2,6 @@ import path from 'path';
 import express from 'express';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-dotenv.config();
 import connectDB from './config/db.js';
 import foodRoutes from './routes/foodRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -10,9 +9,11 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import mealRoutes from './routes/mealRoutes.js';                   
 import nutritionLogRoutes from './routes/nutritionLogRoutes.js';
+import goalRoutes from './routes/goalRoutes.js';
 
 const port = process.env.PORT || 5000;
 
+dotenv.config();
 connectDB();
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/meals', mealRoutes);                                 
 app.use('/api/nutrition-logs', nutritionLogRoutes); 
+app.use('/api/goals', goalRoutes);
 
 if (process.env.NODE_ENV === 'production') {
   const __dirname = path.resolve();

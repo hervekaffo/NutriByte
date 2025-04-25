@@ -7,11 +7,10 @@ const nutritionLogSchema = new mongoose.Schema({
     required: true
   },
 
-  // One unique log per calendar date
+  // Keep date, but remove `unique: true` here
   date: {
     type: Date,
-    default: Date.now,
-    unique: true
+    default: Date.now
   },
 
   totalCalories: {
@@ -32,5 +31,11 @@ const nutritionLogSchema = new mongoose.Schema({
     fats:     { type: Number }
   }
 });
+
+// Add a compound unique index on userId+date
+nutritionLogSchema.index(
+  { userId: 1, date: 1 },
+  { unique: true }
+);
 
 export default mongoose.model('NutritionLog', nutritionLogSchema);

@@ -1,127 +1,290 @@
-import React, { useEffect, useState } from 'react';
-import { Table, Form, Button, Row, Col } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Form,
+  Button,
+  Spinner,
+  ListGroup,
+  Image,
+} from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { FaTimes } from 'react-icons/fa';
-
 import { toast } from 'react-toastify';
+import { useProfileMutation, useUploadMutation } from '../slices/usersApiSlice';
+import { setCredentials } from '../slices/authSlice';
+import { useGetMyGoalQuery } from '../slices/goalsApiSlice';
 import Message from '../components/Message';
 import Loader from '../components/Loader';
-import { useProfileMutation } from '../slices/usersApiSlice';
-import { setCredentials } from '../slices/authSlice';
-import { Link } from 'react-router-dom';
 
 const ProfileScreen = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-
+  const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.auth);
 
+  // Mutations
+  const [updateProfile, { isLoading: loadingUpdate }] = useProfileMutation();
+  const [uploadFile, { isLoading: loadingUpload }] = useUploadMutation();
 
-  const [updateProfile, { isLoading: loadingUpdateProfile }] =
-    useProfileMutation();
+  // Fetch goal
+  const {
+    data: goal,
+    isLoading: loadingGoal,
+    error: errorGoal,
+  } = useGetMyGoalQuery(undefined, { refetchOnMountOrArgChange: true });
 
+  // Form state
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    picture: '',
+    age: '',
+    weight: '',
+    height: '',
+    gender: '',
+    activityLevel: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [message, setMessage] = useState(null);
+
+  // Populate from userInfo
   useEffect(() => {
-    setName(userInfo.name);
-    setEmail(userInfo.email);
-  }, [userInfo.email, userInfo.name]);
+    if (userInfo) {
+      setFormData((f) => ({
+        ...f,
+        name: userInfo.name,
+        email: userInfo.email,
+        picture: userInfo.picture,
+        age: userInfo.age,
+        weight: userInfo.weight,
+        height: userInfo.height,
+        gender: userInfo.gender,
+        activityLevel: userInfo.activityLevel,
+      }));
+    }
+  }, [userInfo]);
 
-  const dispatch = useDispatch();
+  const handleChange = (e) => {
+    setFormData((f) => ({ ...f, [e.target.name]: e.target.value }));
+  };
+
+  const uploadHandler = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const data = new FormData();
+    data.append('image', file);
+    try {
+      const { url } = await uploadFile(data).unwrap();
+      setFormData((f) => ({ ...f, picture: url }));
+      toast.success('Profile picture uploaded');
+    } catch (err) {
+      toast.error(err.data?.message || err.error);
+    }
+  };
+
   const submitHandler = async (e) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      toast.error('Passwords do not match');
-    } else {
-      try {
-        const res = await updateProfile({
-          // NOTE: here we don't need the _id in the request payload as this is
-          // not used in our controller.
-          // _id: userInfo._id,
-          name,
-          email,
-          password,
-        }).unwrap();
-        dispatch(setCredentials({ ...res }));
-        toast.success('Profile updated successfully');
-      } catch (err) {
-        toast.error(err?.data?.message || err.error);
-      }
+    setMessage(null);
+
+    if (formData.password && formData.password !== formData.confirmPassword) {
+      setMessage('Passwords do not match');
+      return;
+    }
+
+    try {
+      const updated = await updateProfile({
+        ...formData,
+        age: Number(formData.age),
+        weight: Number(formData.weight),
+        height: Number(formData.height),
+        password: formData.password || undefined,
+      }).unwrap();
+
+      dispatch(setCredentials(updated));
+      setMessage('Profile updated successfully');
+      setFormData((f) => ({ ...f, password: '', confirmPassword: '' }));
+    } catch (err) {
+      setMessage(err.data?.message || err.error);
     }
   };
 
   return (
-    <Row>
-      <Col md={3}>
-        <h2>Hey {name}</h2>
+    <Container className="py-5">
+      <Row className="g-4">
+        {/* PROFILE CARD */}
+        <Col lg={4}>
+          <Card className="shadow-sm">
+            <Card.Header className="bg-primary text-white">
+              My Profile
+            </Card.Header>
+            <Card.Body>
+              {message && (
+                <Message
+                  variant={message.includes('success') ? 'success' : 'danger'}
+                >
+                  {message}
+                </Message>
+              )}
+              <Form onSubmit={submitHandler}>
+                {/* Picture upload & preview */}
+                <Form.Group controlId="picture" className="mb-3 text-center">
+                  {formData.picture && (
+                    <Image
+                      src={formData.picture}
+                      roundedCircle
+                      style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                      className="mb-2"
+                    />
+                  )}
+                  <Form.Label>Profile Picture</Form.Label>
+                  <Form.Control
+                    type="file"
+                    name="picture"
+                    accept="image/*"
+                    onChange={uploadHandler}
+                  />
+                  {loadingUpload && (
+                    <Spinner animation="border" size="sm" className="mt-2" />
+                  )}
+                </Form.Group>
 
-        <Form onSubmit={submitHandler}>
-          <Form.Group className='my-2' controlId='name'>
-            <Form.Label>Name</Form.Label>
-            <Form.Control
-              type='text'
-              placeholder='Enter name'
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            ></Form.Control>
-          </Form.Group>
+                {/* Text fields */}
+                {[
+                  { label: 'Name', name: 'name', type: 'text' },
+                  { label: 'Email', name: 'email', type: 'email' },
+                  { label: 'Age', name: 'age', type: 'number' },
+                  { label: 'Weight (kg)', name: 'weight', type: 'number' },
+                  { label: 'Height (cm)', name: 'height', type: 'number' },
+                ].map(({ label, name, type }) => (
+                  <Form.Group controlId={name} className="mb-3" key={name}>
+                    <Form.Label>{label}</Form.Label>
+                    <Form.Control
+                      type={type}
+                      name={name}
+                      value={formData[name]}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+                ))}
 
-          <Form.Group className='my-2' controlId='email'>
-            <Form.Label>Email Address</Form.Label>
-            <Form.Control
-              type='email'
-              placeholder='Enter email'
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            ></Form.Control>
-          </Form.Group>
+                <Form.Group controlId="gender" className="mb-3">
+                  <Form.Label>Gender</Form.Label>
+                  <Form.Select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                  >
+                    <option value="">Choose…</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Other</option>
+                  </Form.Select>
+                </Form.Group>
 
-          <Form.Group className='my-2' controlId='password'>
-            <Form.Label>Password</Form.Label>
-            <Form.Control
-              type='password'
-              placeholder='Enter password'
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            ></Form.Control>
-          </Form.Group>
+                <Form.Group controlId="activityLevel" className="mb-3">
+                  <Form.Label>Activity Level</Form.Label>
+                  <Form.Select
+                    name="activityLevel"
+                    value={formData.activityLevel}
+                    onChange={handleChange}
+                  >
+                    <option value="">Choose…</option>
+                    <option>Sedentary</option>
+                    <option>Lightly Active</option>
+                    <option>Moderately Active</option>
+                    <option>Very Active</option>
+                  </Form.Select>
+                </Form.Group>
 
-          <Form.Group className='my-2' controlId='confirmPassword'>
-            <Form.Label>Confirm Password</Form.Label>
-            <Form.Control
-              type='password'
-              placeholder='Confirm password'
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            ></Form.Control>
-          </Form.Group>
+                {/* Password */}
+                <Row>
+                  <Col>
+                    <Form.Group controlId="password" className="mb-3">
+                      <Form.Label>New Password</Form.Label>
+                      <Form.Control
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="confirmPassword" className="mb-3">
+                      <Form.Label>Confirm Password</Form.Label>
+                      <Form.Control
+                        type="password"
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
 
-          <Button type='submit' variant='primary'>
-            Update
-          </Button>
-          {loadingUpdateProfile && <Loader />}
-        </Form>
-      </Col>
-      <Col md={9}>
-        <h2>Your meals Log</h2>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="w-100"
+                  disabled={loadingUpdate}
+                >
+                  {loadingUpdate ? (
+                    <Spinner animation="border" size="sm" />
+                  ) : (
+                    'Update Profile'
+                  )}
+                </Button>
+              </Form>
+            </Card.Body>
+          </Card>
+        </Col>
 
-          <Table striped hover responsive className='table-sm'>
-            <thead>
-              <tr>
-                <th>FDCid</th>
-                <th>DATE</th>
-                <th>Size</th>
-                <th>UNIT</th>
-                <th>CALORIES</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-            </tbody>
-          </Table>
- 
-      </Col>
-    </Row>
+        {/* GOAL CARD */}
+        <Col lg={8}>
+          <Card className="shadow-sm">
+            <Card.Header className="bg-success text-white">My Goal</Card.Header>
+            <Card.Body>
+              {loadingGoal ? (
+                <Loader />
+              ) : errorGoal ? (
+                <Message variant="danger">
+                  {errorGoal.data?.message || errorGoal.error}
+                </Message>
+              ) : goal ? (
+                <ListGroup variant="flush">
+                  <ListGroup.Item>
+                    <strong>Type:</strong> {goal.goalType}
+                  </ListGroup.Item>
+                  <ListGroup.Item>
+                    <strong>Target Weight:</strong>{' '}
+                    {goal.targetWeight || '—'}
+                  </ListGroup.Item>
+                  <ListGroup.Item>
+                    <strong>Calories/day:</strong> {goal.dailyCalorieGoal}
+                  </ListGroup.Item>
+                  <ListGroup.Item>
+                    <strong>Protein:</strong>{' '}
+                    {goal.dailyMacrosGoal.protein} g
+                  </ListGroup.Item>
+                  <ListGroup.Item>
+                    <strong>Carbs:</strong>{' '}
+                    {goal.dailyMacrosGoal.carbohydrates} g
+                  </ListGroup.Item>
+                  <ListGroup.Item>
+                    <strong>Fats:</strong> {goal.dailyMacrosGoal.fat} g
+                  </ListGroup.Item>
+                </ListGroup>
+              ) : (
+                <Message>
+                  No goal set. <a href="/goals">Set your goal now</a>
+                </Message>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
   );
 };
 

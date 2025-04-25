@@ -29,7 +29,8 @@ import UserEditScreen from './screens/admin/UserEditScreen';
 import store from './store';
 import { Provider } from 'react-redux';
 import { PayPalScriptProvider } from '@paypal/react-paypal-js';
-import NutritionLogsScreen from './screens/NutritionLogsScreen'; // ⬅️ Added import
+import NutritionLogsScreen from './screens/NutritionLogsScreen'; 
+import GoalScreen from './screens/GoalScreen';
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -47,6 +48,7 @@ const router = createBrowserRouter(
       <Route element={<PrivateRoute />}>
         <Route path='/savelogs' element={<SaveLogScreen />} />
         <Route path='/nutrition-logs' element={<NutritionLogsScreen />} /> {/* ⬅️ Nutrition Log route */}
+        <Route path='/goals' element={<GoalScreen />} />
         <Route path='/profile' element={<ProfileScreen />} />
       </Route>
 
