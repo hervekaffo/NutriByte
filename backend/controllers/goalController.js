@@ -1,23 +1,22 @@
 import asyncHandler from '../middleware/asyncHandler.js';
-import Goal from '../models/goalModel.js';
-import { Macro } from '../models/foodModel.js';
-import User from '../models/userModel.js';
+import Goal        from '../models/goalModel.js';
+import { Macro }   from '../models/foodModel.js';    // ← ensure Macro is exported from foodModel.js
+import User        from '../models/userModel.js';
 
 // @desc    Get the current user's goal
 // @route   GET /api/goals/my
 // @access  Private
 export const getMyGoal = asyncHandler(async (req, res) => {
-    const goal = await Goal.findOne({ userId: req.user._id })
-      .populate('dailyMacrosGoal');
-    
-    // If no goal, return 200 with null
-    if (!goal) {
-      return res.status(200).json(null);
-    }
-  
-    // Otherwise return the goal document
-    res.json(goal);
-  });
+  const goal = await Goal.findOne({ userId: req.user._id })
+    .populate('dailyMacrosGoal');
+
+  // Return null if no goal, so front-end can show “No goal set”
+  if (!goal) {
+    return res.status(200).json(null);
+  }
+
+  res.json(goal);
+});
 
 // @desc    Create a new goal for current user
 // @route   POST /api/goals
@@ -32,7 +31,7 @@ export const createGoal = asyncHandler(async (req, res) => {
     endDate
   } = req.body;
 
-  // 1) Create a Macro doc
+  // 1) Create Macro
   const macro = await Macro.create({
     calories:      dailyCalorieGoal,
     protein,
@@ -42,7 +41,7 @@ export const createGoal = asyncHandler(async (req, res) => {
     sugar:         0
   });
 
-  // 2) Create the Goal
+  // 2) Create Goal referencing that Macro
   const goal = await Goal.create({
     userId:           req.user._id,
     goalType,
@@ -53,15 +52,15 @@ export const createGoal = asyncHandler(async (req, res) => {
     endDate
   });
 
-  // 3) Attach to user
+  // 3) Attach goal to user
   await User.findByIdAndUpdate(req.user._id, { goal: goal._id });
 
-  res.status(201).json(
-    await goal.populate('dailyMacrosGoal')
-  );
+  // 4) Return populated Goal
+  const populated = await goal.populate('dailyMacrosGoal');
+  res.status(201).json(populated);
 });
 
-// @desc    Update an existing goal (must own or be admin)
+// @desc    Update an existing goal
 // @route   PUT /api/goals/:id
 // @access  Private
 export const updateGoal = asyncHandler(async (req, res) => {
@@ -70,7 +69,8 @@ export const updateGoal = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Goal not found');
   }
-  // Ensure owner or admin
+
+  // Only owner or admin may update
   if (goal.userId.toString() !== req.user._id.toString() && !req.user.isAdmin) {
     res.status(403);
     throw new Error('Not authorized');
@@ -99,8 +99,8 @@ export const updateGoal = asyncHandler(async (req, res) => {
   goal.dailyCalorieGoal = dailyCalorieGoal;
   goal.startDate        = startDate;
   goal.endDate          = endDate;
-  const updated = await goal.save();
 
+  const updated = await goal.save();
   res.json(await updated.populate('dailyMacrosGoal'));
 });
 
@@ -108,7 +108,9 @@ export const updateGoal = asyncHandler(async (req, res) => {
 // @route   GET /api/goals
 // @access  Private/Admin
 export const getGoals = asyncHandler(async (req, res) => {
-  const goals = await Goal.find().populate('dailyMacrosGoal').populate('userId','name email');
+  const goals = await Goal.find()
+    .populate('dailyMacrosGoal')
+    .populate('userId', 'name email');
   res.json(goals);
 });
 
@@ -121,7 +123,7 @@ export const deleteGoal = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Goal not found');
   }
-  // Remove its Macro doc too
+  // Remove associated Macro
   await Macro.findByIdAndDelete(goal.dailyMacrosGoal);
   await goal.deleteOne();
   res.json({ message: 'Goal removed' });
@@ -131,7 +133,8 @@ export const deleteGoal = asyncHandler(async (req, res) => {
 // @route   GET /api/goals/:id
 // @access  Private/Admin
 export const getGoalById = asyncHandler(async (req, res) => {
-  const goal = await Goal.findById(req.params.id).populate('dailyMacrosGoal');
+  const goal = await Goal.findById(req.params.id)
+    .populate('dailyMacrosGoal');
   if (!goal) {
     res.status(404);
     throw new Error('Goal not found');

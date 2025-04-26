@@ -1,57 +1,44 @@
-import React, { useState, useEffect } from 'react';
+// frontend/src/screens/ProfileScreen.jsx
+
+import React, { useState, useEffect } from 'react'
 import {
-  Container,
-  Row,
-  Col,
-  Card,
-  Form,
-  Button,
-  Spinner,
-  ListGroup,
-  Image,
-} from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
-import { toast } from 'react-toastify';
-import { useProfileMutation, useUploadMutation } from '../slices/usersApiSlice';
-import { setCredentials } from '../slices/authSlice';
-import { useGetMyGoalQuery } from '../slices/goalsApiSlice';
-import Message from '../components/Message';
-import Loader from '../components/Loader';
+  Container, Row, Col, Card, Form, Button, Spinner, ListGroup, Image
+} from 'react-bootstrap'
+import { useDispatch, useSelector }      from 'react-redux'
+import { toast }                         from 'react-toastify'
+import { useProfileMutation, useUploadMutation } from '../slices/usersApiSlice'
+import { useGetMyGoalQuery }             from '../slices/goalsApiSlice'
+import { setCredentials }                from '../slices/authSlice'
+import Message                           from '../components/Message'
+import Loader                            from '../components/Loader'
 
 const ProfileScreen = () => {
-  const dispatch = useDispatch();
-  const { userInfo } = useSelector((state) => state.auth);
+  const dispatch = useDispatch()
+  const { userInfo } = useSelector((state) => state.auth)
 
-  // Mutations
-  const [updateProfile, { isLoading: loadingUpdate }] = useProfileMutation();
-  const [uploadFile, { isLoading: loadingUpload }] = useUploadMutation();
+  // load current goal to show in read-only card
+  const { data: goal, isLoading: loadingGoal, error: errorGoal } =
+    useGetMyGoalQuery()
 
-  // Fetch goal
-  const {
-    data: goal,
-    isLoading: loadingGoal,
-    error: errorGoal,
-  } = useGetMyGoalQuery(undefined, { refetchOnMountOrArgChange: true });
+  // mutations
+  const [updateProfile, { isLoading: loadingUpdate }] = useProfileMutation()
+  const [uploadFile, { isLoading: loadingUpload }]    = useUploadMutation()
 
-  // Form state
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    picture: '',
-    age: '',
-    weight: '',
-    height: '',
-    gender: '',
-    activityLevel: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [message, setMessage] = useState(null);
+  // form state
+  const [form, setForm] = useState({
+    name: '', email: '', picture: '',
+    age: '', weight: '', height: '',
+    gender: 'Male', activityLevel: 'Sedentary',
+    goal: 'Maintenance',
+    dailyCalorieGoal: '',
+    proteinGoal: '', carbsGoal: '', fatsGoal: '',
+    password: '', confirmPassword: ''
+  })
+  const [message, setMessage] = useState(null)
 
-  // Populate from userInfo
   useEffect(() => {
     if (userInfo) {
-      setFormData((f) => ({
+      setForm(f => ({
         ...f,
         name: userInfo.name,
         email: userInfo.email,
@@ -61,62 +48,74 @@ const ProfileScreen = () => {
         height: userInfo.height,
         gender: userInfo.gender,
         activityLevel: userInfo.activityLevel,
-      }));
+        goal: userInfo.goal || 'Maintenance',
+        dailyCalorieGoal: userInfo.dailyCalorieGoal || '',
+        proteinGoal: userInfo.dailyMacrosGoal?.protein || '',
+        carbsGoal:   userInfo.dailyMacrosGoal?.carbs   || '',
+        fatsGoal:    userInfo.dailyMacrosGoal?.fats    || ''
+      }))
     }
-  }, [userInfo]);
+  }, [userInfo])
 
-  const handleChange = (e) => {
-    setFormData((f) => ({ ...f, [e.target.name]: e.target.value }));
-  };
+  const handleChange = e => {
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+  }
 
-  const uploadHandler = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const data = new FormData();
-    data.append('image', file);
+  const uploadHandler = async e => {
+    const file = e.target.files[0]
+    if (!file) return
+    const data = new FormData()
+    data.append('picture', file)             // must match upload.single('picture')
     try {
-      const { url } = await uploadFile(data).unwrap();
-      setFormData((f) => ({ ...f, picture: url }));
-      toast.success('Profile picture uploaded');
+      const { picture: url } = await uploadFile(data).unwrap()
+      setForm(f => ({ ...f, picture: url }))
+      toast.success('Upload successful')
     } catch (err) {
-      toast.error(err.data?.message || err.error);
+      toast.error(err.data?.message || err.error)
     }
-  };
+  }
 
-  const submitHandler = async (e) => {
-    e.preventDefault();
-    setMessage(null);
-
-    if (formData.password && formData.password !== formData.confirmPassword) {
-      setMessage('Passwords do not match');
-      return;
+  const submitHandler = async e => {
+    e.preventDefault()
+    setMessage(null)
+    if (form.password && form.password !== form.confirmPassword) {
+      return setMessage('Passwords do not match')
     }
-
     try {
       const updated = await updateProfile({
-        ...formData,
-        age: Number(formData.age),
-        weight: Number(formData.weight),
-        height: Number(formData.height),
-        password: formData.password || undefined,
-      }).unwrap();
-
-      dispatch(setCredentials(updated));
-      setMessage('Profile updated successfully');
-      setFormData((f) => ({ ...f, password: '', confirmPassword: '' }));
+        name: form.name,
+        email: form.email,
+        picture: form.picture,
+        age: Number(form.age),
+        weight: Number(form.weight),
+        height: Number(form.height),
+        gender: form.gender,
+        activityLevel: form.activityLevel,
+        goal: form.goal,                         // ← a string in ['Weight Loss','Maintenance','Muscle Gain']
+        dailyCalorieGoal: Number(form.dailyCalorieGoal),
+        dailyMacrosGoal: {                       // ← nested object
+          protein: Number(form.proteinGoal),
+          carbs:   Number(form.carbsGoal),
+          fats:    Number(form.fatsGoal)
+        },
+        password: form.password || undefined
+      }).unwrap()
+      dispatch(setCredentials(updated))
+      setMessage('Profile updated successfully')
+      setForm(f => ({ ...f, password: '', confirmPassword: '' }))
     } catch (err) {
-      setMessage(err.data?.message || err.error);
+      setMessage(err.data?.message || err.error)
     }
-  };
+  }
 
   return (
     <Container className="py-5">
       <Row className="g-4">
-        {/* PROFILE CARD */}
+        {/* --- PROFILE FORM CARD --- */}
         <Col lg={4}>
           <Card className="shadow-sm">
             <Card.Header className="bg-primary text-white">
-              My Profile
+              Edit Profile
             </Card.Header>
             <Card.Body>
               {message && (
@@ -127,13 +126,13 @@ const ProfileScreen = () => {
                 </Message>
               )}
               <Form onSubmit={submitHandler}>
-                {/* Picture upload & preview */}
+                {/* Picture */}
                 <Form.Group controlId="picture" className="mb-3 text-center">
-                  {formData.picture && (
+                  {form.picture && (
                     <Image
-                      src={formData.picture}
+                      src={form.picture}
                       roundedCircle
-                      style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                      style={{ width: 100, height: 100, objectFit: 'cover' }}
                       className="mb-2"
                     />
                   )}
@@ -149,33 +148,70 @@ const ProfileScreen = () => {
                   )}
                 </Form.Group>
 
-                {/* Text fields */}
-                {[
-                  { label: 'Name', name: 'name', type: 'text' },
-                  { label: 'Email', name: 'email', type: 'email' },
-                  { label: 'Age', name: 'age', type: 'number' },
-                  { label: 'Weight (kg)', name: 'weight', type: 'number' },
-                  { label: 'Height (cm)', name: 'height', type: 'number' },
-                ].map(({ label, name, type }) => (
-                  <Form.Group controlId={name} className="mb-3" key={name}>
-                    <Form.Label>{label}</Form.Label>
-                    <Form.Control
-                      type={type}
-                      name={name}
-                      value={formData[name]}
-                      onChange={handleChange}
-                    />
-                  </Form.Group>
-                ))}
+                {/* Basic info */}
+                <Form.Group controlId="name" className="mb-3">
+                  <Form.Label>Name</Form.Label>
+                  <Form.Control
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+                <Form.Group controlId="email" className="mb-3">
+                  <Form.Label>Email</Form.Label>
+                  <Form.Control
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
 
+                {/* Age / Weight / Height */}
+                <Row>
+                  <Col>
+                    <Form.Group controlId="age" className="mb-3">
+                      <Form.Label>Age</Form.Label>
+                      <Form.Control
+                        name="age"
+                        type="number"
+                        value={form.age}
+                        onChange={handleChange}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="weight" className="mb-3">
+                      <Form.Label>Weight (kg)</Form.Label>
+                      <Form.Control
+                        name="weight"
+                        type="number"
+                        value={form.weight}
+                        onChange={handleChange}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="height" className="mb-3">
+                      <Form.Label>Height (cm)</Form.Label>
+                      <Form.Control
+                        name="height"
+                        type="number"
+                        value={form.height}
+                        onChange={handleChange}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                {/* Gender & Activity */}
                 <Form.Group controlId="gender" className="mb-3">
                   <Form.Label>Gender</Form.Label>
                   <Form.Select
                     name="gender"
-                    value={formData.gender}
+                    value={form.gender}
                     onChange={handleChange}
                   >
-                    <option value="">Choose…</option>
                     <option>Male</option>
                     <option>Female</option>
                     <option>Other</option>
@@ -186,10 +222,9 @@ const ProfileScreen = () => {
                   <Form.Label>Activity Level</Form.Label>
                   <Form.Select
                     name="activityLevel"
-                    value={formData.activityLevel}
+                    value={form.activityLevel}
                     onChange={handleChange}
                   >
-                    <option value="">Choose…</option>
                     <option>Sedentary</option>
                     <option>Lightly Active</option>
                     <option>Moderately Active</option>
@@ -197,15 +232,75 @@ const ProfileScreen = () => {
                   </Form.Select>
                 </Form.Group>
 
+                {/* Goal type & numeric goals */}
+                <Form.Group controlId="goal" className="mb-3">
+                  <Form.Label>Goal</Form.Label>
+                  <Form.Select
+                    name="goal"
+                    value={form.goal}
+                    onChange={handleChange}
+                  >
+                    <option>Lose Weight</option>  
+                    <option>Maintain Weight</option>
+                    <option>Gain Muscle</option>
+                  </Form.Select>
+                </Form.Group>
+
+                <Form.Group controlId="dailyCalorieGoal" className="mb-3">
+                  <Form.Label>Daily Calorie Goal</Form.Label>
+                  <Form.Control
+                    name="dailyCalorieGoal"
+                    type="number"
+                    value={form.dailyCalorieGoal}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+
+                <Row>
+                  <Col>
+                    <Form.Group controlId="proteinGoal" className="mb-3">
+                      <Form.Label>Protein (g)</Form.Label>
+                      <Form.Control
+                        name="proteinGoal"
+                        type="number"
+                        value={form.proteinGoal}
+                        onChange={handleChange}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="carbsGoal" className="mb-3">
+                      <Form.Label>Carbs (g)</Form.Label>
+                      <Form.Control
+                        name="carbsGoal"
+                        type="number"
+                        value={form.carbsGoal}
+                        onChange={handleChange}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group controlId="fatsGoal" className="mb-3">
+                      <Form.Label>Fats (g)</Form.Label>
+                      <Form.Control
+                        name="fatsGoal"
+                        type="number"
+                        value={form.fatsGoal}
+                        onChange={handleChange}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
                 {/* Password */}
                 <Row>
                   <Col>
                     <Form.Group controlId="password" className="mb-3">
                       <Form.Label>New Password</Form.Label>
                       <Form.Control
-                        type="password"
                         name="password"
-                        value={formData.password}
+                        type="password"
+                        value={form.password}
                         onChange={handleChange}
                       />
                     </Form.Group>
@@ -214,9 +309,9 @@ const ProfileScreen = () => {
                     <Form.Group controlId="confirmPassword" className="mb-3">
                       <Form.Label>Confirm Password</Form.Label>
                       <Form.Control
-                        type="password"
                         name="confirmPassword"
-                        value={formData.confirmPassword}
+                        type="password"
+                        value={form.confirmPassword}
                         onChange={handleChange}
                       />
                     </Form.Group>
@@ -229,18 +324,14 @@ const ProfileScreen = () => {
                   className="w-100"
                   disabled={loadingUpdate}
                 >
-                  {loadingUpdate ? (
-                    <Spinner animation="border" size="sm" />
-                  ) : (
-                    'Update Profile'
-                  )}
+                  {loadingUpdate ? <Spinner animation="border" size="sm" /> : 'Update Profile'}
                 </Button>
               </Form>
             </Card.Body>
           </Card>
         </Col>
 
-        {/* GOAL CARD */}
+        {/* --- GOAL DISPLAY CARD --- */}
         <Col lg={8}>
           <Card className="shadow-sm">
             <Card.Header className="bg-success text-white">My Goal</Card.Header>
@@ -253,31 +344,16 @@ const ProfileScreen = () => {
                 </Message>
               ) : goal ? (
                 <ListGroup variant="flush">
-                  <ListGroup.Item>
-                    <strong>Type:</strong> {goal.goalType}
-                  </ListGroup.Item>
-                  <ListGroup.Item>
-                    <strong>Target Weight:</strong>{' '}
-                    {goal.targetWeight || '—'}
-                  </ListGroup.Item>
-                  <ListGroup.Item>
-                    <strong>Calories/day:</strong> {goal.dailyCalorieGoal}
-                  </ListGroup.Item>
-                  <ListGroup.Item>
-                    <strong>Protein:</strong>{' '}
-                    {goal.dailyMacrosGoal.protein} g
-                  </ListGroup.Item>
-                  <ListGroup.Item>
-                    <strong>Carbs:</strong>{' '}
-                    {goal.dailyMacrosGoal.carbohydrates} g
-                  </ListGroup.Item>
-                  <ListGroup.Item>
-                    <strong>Fats:</strong> {goal.dailyMacrosGoal.fat} g
-                  </ListGroup.Item>
+                  <ListGroup.Item><strong>Type:</strong> {goal.goalType}</ListGroup.Item>
+                  <ListGroup.Item><strong>Target Weight:</strong> {goal.targetWeight ?? '—'}</ListGroup.Item>
+                  <ListGroup.Item><strong>Calories/day:</strong> {goal.dailyCalorieGoal}</ListGroup.Item>
+                  <ListGroup.Item><strong>Protein:</strong> {goal.dailyMacrosGoal.protein} g</ListGroup.Item>
+                  <ListGroup.Item><strong>Carbs:</strong>   {goal.dailyMacrosGoal.carbohydrates} g</ListGroup.Item>
+                  <ListGroup.Item><strong>Fats:</strong>    {goal.dailyMacrosGoal.fat} g</ListGroup.Item>
                 </ListGroup>
               ) : (
                 <Message>
-                  No goal set <a href="/goals">Set your goal now</a>
+                  No goal set. <a href="/goals">Set your goal now</a>
                 </Message>
               )}
             </Card.Body>
@@ -285,7 +361,7 @@ const ProfileScreen = () => {
         </Col>
       </Row>
     </Container>
-  );
-};
+  )
+}
 
-export default ProfileScreen;
+export default ProfileScreen

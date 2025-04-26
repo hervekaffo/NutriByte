@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose'
+import bcrypt   from 'bcryptjs'
 
 const userSchema = new mongoose.Schema(
   {
@@ -40,9 +40,15 @@ const userSchema = new mongoose.Schema(
     },
     activityLevel: {
       type: String,
-      enum: ['Sedentary', 'Lightly Active', 'Moderately Active', 'Very Active'],
+      enum: [
+        'Sedentary',
+        'Lightly Active',
+        'Moderately Active',
+        'Very Active'
+      ],
       required: true
     },
+    // <—–– unified with ProfileScreen.jsx options
     goal: {
       type: String,
       enum: ['Lose Weight', 'Maintain Weight', 'Gain Muscle'],
@@ -52,6 +58,7 @@ const userSchema = new mongoose.Schema(
       type: Number,
       required: false
     },
+    // embedded macros breakdown
     dailyMacrosGoal: {
       protein: {
         type: Number,
@@ -75,21 +82,19 @@ const userSchema = new mongoose.Schema(
   {
     timestamps: true
   }
-);
+)
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
-    return next();
-  }
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
+  if (!this.isModified('password')) return next()
+  const salt = await bcrypt.genSalt(10)
+  this.password = await bcrypt.hash(this.password, salt)
+  next()
+})
 
-// Method to compare entered password to hashed password
+// Compare plaintext to hashed
 userSchema.methods.matchPassword = async function (enteredPassword) {
-  return bcrypt.compare(enteredPassword, this.password);
-};
+  return bcrypt.compare(enteredPassword, this.password)
+}
 
-export default mongoose.model('User', userSchema);
+export default mongoose.model('User', userSchema)

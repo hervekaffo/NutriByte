@@ -94,10 +94,10 @@ const GoalScreen = () => {
             onChange={(e) => setGoalType(e.target.value)}
             required
           >
-            <option value="">Choose…</option>
-            <option>Weight Loss</option>
-            <option>Muscle Gain</option>
-            <option>Maintenance</option>
+            <option value="">Choose…</option>   
+            <option>Lose Weight</option>
+            <option>Maintain Weight</option>
+            <option>Gain Muscle</option>
           </Form.Select>
         </Form.Group>
 
