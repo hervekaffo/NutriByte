@@ -7,12 +7,17 @@ import User from '../models/userModel.js';
 // @route   GET /api/goals/my
 // @access  Private
 export const getMyGoal = asyncHandler(async (req, res) => {
-  const goal = await Goal.findOne({ userId: req.user._id }).populate('dailyMacrosGoal');
-  if (!goal) {
-    return res.status(404).json({ message: 'No goal set' });
-  }
-  res.json(goal);
-});
+    const goal = await Goal.findOne({ userId: req.user._id })
+      .populate('dailyMacrosGoal');
+    
+    // If no goal, return 200 with null
+    if (!goal) {
+      return res.status(200).json(null);
+    }
+  
+    // Otherwise return the goal document
+    res.json(goal);
+  });
 
 // @desc    Create a new goal for current user
 // @route   POST /api/goals

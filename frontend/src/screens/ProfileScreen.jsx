@@ -277,7 +277,7 @@ const ProfileScreen = () => {
                 </ListGroup>
               ) : (
                 <Message>
-                  No goal set. <a href="/goals">Set your goal now</a>
+                  No goal set <a href="/goals">Set your goal now</a>
                 </Message>
               )}
             </Card.Body>

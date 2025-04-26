@@ -37,6 +37,10 @@ export const mealsApiSlice = apiSlice.injectEndpoints({
         { type: 'NutritionLog', id: date },
       ],
     }),
+    getNutritionSuggestion: builder.query({
+        query: () => '/api/suggestions/nutrition',
+        keepUnusedDataFor: 0,
+    }),
   }),
 });
 
@@ -45,4 +49,5 @@ export const {
   useUpdateMealMutation,
   useGetNutritionLogsQuery,
   useGetNutritionLogByDateQuery,
+  useGetNutritionSuggestionQuery,
 } = mealsApiSlice;

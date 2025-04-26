@@ -10,6 +10,7 @@ import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import mealRoutes from './routes/mealRoutes.js';                   
 import nutritionLogRoutes from './routes/nutritionLogRoutes.js';
 import goalRoutes from './routes/goalRoutes.js';
+import suggestionRoutes from './routes/suggestionRoutes.js';
 
 const port = process.env.PORT || 5000;
 
@@ -28,6 +29,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/meals', mealRoutes);                                 
 app.use('/api/nutrition-logs', nutritionLogRoutes); 
 app.use('/api/goals', goalRoutes);
+app.use('/api/suggestions', suggestionRoutes);
 
 if (process.env.NODE_ENV === 'production') {
   const __dirname = path.resolve();

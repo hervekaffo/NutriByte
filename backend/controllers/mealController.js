@@ -1,8 +1,11 @@
+// backend/controllers/mealController.js
+
 import asyncHandler from '../middleware/asyncHandler.js';
 import Meal         from '../models/mealModel.js';
 import Food         from '../models/foodModel.js';
 import NutritionLog from '../models/nutritionLogsModel.js';
 import User         from '../models/userModel.js';
+import Goal         from '../models/goalModel.js';
 
 // Helper to zero out the time portion of a Date
 const normalizeDate = dt => {
@@ -16,7 +19,14 @@ const normalizeDate = dt => {
 // @access  Private
 export const createMeal = asyncHandler(async (req, res) => {
   const { date, foods, overrideTotals } = req.body;
-  const user = await User.findById(req.user._id);
+
+  // 1) Fetch the user's Goal (with macros)
+  const goal = await Goal.findOne({ userId: req.user._id })
+    .populate('dailyMacrosGoal');
+  if (!goal) {
+    res.status(400);
+    throw new Error('Please set a daily goal before logging meals');
+  }
 
   let totalCalories, totalProtein, totalCarbs, totalFats;
 
@@ -59,7 +69,7 @@ export const createMeal = asyncHandler(async (req, res) => {
     }
   }
 
-  // Save the Meal document
+  // 2) Save the Meal document
   const meal = new Meal({
     userId:       req.user._id,
     date,
@@ -73,7 +83,7 @@ export const createMeal = asyncHandler(async (req, res) => {
   });
   const createdMeal = await meal.save();
 
-  // Upsert the daily NutritionLog
+  // 3) Upsert the daily NutritionLog
   const logDate = normalizeDate(date);
   let log = await NutritionLog.findOne({
     userId: req.user._id,
@@ -98,27 +108,16 @@ export const createMeal = asyncHandler(async (req, res) => {
     });
   }
 
-  // Compute progress toward user's daily goals
-  if (user.dailyCalorieGoal) {
-    log.progressTowardsGoal = {
-      calories:
-        (log.totalCalories / user.dailyCalorieGoal) * 100,
-      protein:
-        user.dailyMacrosGoal.protein
-          ? (log.totalMacros.protein / user.dailyMacrosGoal.protein) * 100
-          : undefined,
-      carbs:
-        user.dailyMacrosGoal.carbs
-          ? (log.totalMacros.carbs / user.dailyMacrosGoal.carbs) * 100
-          : undefined,
-      fats:
-        user.dailyMacrosGoal.fats
-          ? (log.totalMacros.fats / user.dailyMacrosGoal.fats) * 100
-          : undefined
-    };
-  }
+  // 4) Compute progress toward the daily Goal
+  log.progressTowardsGoal = {
+    calories: (log.totalCalories / goal.dailyCalorieGoal) * 100,
+    protein:  (log.totalMacros.protein / goal.dailyMacrosGoal.protein) * 100,
+    carbs:    (log.totalMacros.carbs / goal.dailyMacrosGoal.carbohydrates) * 100,
+    fats:     (log.totalMacros.fats / goal.dailyMacrosGoal.fat) * 100,
+  };
 
   await log.save();
+
   res.status(201).json(createdMeal);
 });
 
@@ -186,6 +185,19 @@ export const updateMeal = asyncHandler(async (req, res) => {
     log.totalMacros.protein += (totalProtein  - old.protein);
     log.totalMacros.carbs   += (totalCarbs    - old.carbs);
     log.totalMacros.fats    += (totalFats     - old.fats);
+
+    // Recompute progress toward goal when you update
+    const goal = await Goal.findOne({ userId: req.user._id })
+      .populate('dailyMacrosGoal');
+    if (goal) {
+      log.progressTowardsGoal = {
+        calories: (log.totalCalories / goal.dailyCalorieGoal) * 100,
+        protein:  (log.totalMacros.protein / goal.dailyMacrosGoal.protein) * 100,
+        carbs:    (log.totalMacros.carbs / goal.dailyMacrosGoal.carbohydrates) * 100,
+        fats:     (log.totalMacros.fats / goal.dailyMacrosGoal.fat) * 100,
+      };
+    }
+
     await log.save();
   }
 
