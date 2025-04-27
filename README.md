@@ -16,10 +16,16 @@
 
 ## Features
 
-- User profile 
-- Admin product management
-- Admin user management
-- Database seeder (products & users)
+- User profile(Registration, Login, Logout, Profile picture, Profile Update)
+- Admin User and Food Management
+- Food Search
+- Food Rating
+- Meal Builder
+- Nutrition Logs
+- Nutrition Goals(Set and Compare)
+- Nutrition Graphs
+- AI Nutrition Suggestions from Nutrition Logs Data
+- Database seeder (Food, users, Nutrition Logs)
 
 ## Usage
 
@@ -35,6 +41,7 @@ PORT = 5000
 MONGO_URI = your mongodb uri
 JWT_SECRET = 'abc123'
 PAGINATION_LIMIT = 8
+OPENAI_API_KEY=<Your OPEN AI API Key>
 ```
 
 Change the JWT_SECRET and PAGINATION_LIMIT to what you want
@@ -90,6 +97,17 @@ john@email.com (Customer)
 jane@email.com (Customer)
 123456
 ```
+# NutriByte MERN CI/CD
+
+## 1. Prerequisites
+- AWS CLI v2 configured (`aws configure`)
+- GitHub Personal Access Token with `repo` & `admin:repo_hook` scopes
+
+## 2. Local env files
+Copy and fill in real values:
+```bash
+
+
 
 ---
 
