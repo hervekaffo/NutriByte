@@ -1,0 +1,38 @@
+version: 0.2
+
+env:
+  variables:
+    FRONTEND_BUCKET: nutribyte-frontend-bucket
+    BACKEND_REPO: backend
+    AWS_REGION: us-east-1
+    IMAGE_TAG: latest
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging into ECR...
+      - aws ecr get-login-password --region $AWS_REGION \
+          | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+  build:
+    commands:
+      - echo Build & push backend Docker image...
+      - cd backend
+      - docker build -t $BACKEND_REPO:$IMAGE_TAG .
+      - docker tag $BACKEND_REPO:$IMAGE_TAG \
+          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG
+      - cd ../frontend
+      - echo Build React app...
+      - npm install
+      - npm run build
+      - echo Syncing build/ → S3...
+      - aws s3 sync build s3://$FRONTEND_BUCKET --delete
+  post_build:
+    commands:
+      - echo Writing imagedefinitions.json...
+      - printf '[{"name":"backend","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:%s"}]' \
+          $AWS_ACCOUNT_ID $AWS_REGION $BACKEND_REPO $IMAGE_TAG \
+        > imagedefinitions.json
+artifacts:
+  files:
+    - imagedefinitions.json

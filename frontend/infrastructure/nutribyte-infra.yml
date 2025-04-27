@@ -1,0 +1,479 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  NutriByte MERN stack: VPC, DocumentDB, ECS Fargate backend, S3+CF frontend,
+  ALB, CloudWatch, plus a CodePipeline for CI/CD.
+
+Parameters:
+  # -------- backend / DocumentDB / network parameters --------
+  DBUsername:
+    Type: String
+    Description: Master username for DocumentDB
+  DBPassword:
+    NoEcho: true
+    Type: String
+    Description: Master password for DocumentDB
+  VpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+  PublicSubnet1Cidr:
+    Type: String
+    Default: 10.0.1.0/24
+  PublicSubnet2Cidr:
+    Type: String
+    Default: 10.0.2.0/24
+  PrivateSubnet1Cidr:
+    Type: String
+    Default: 10.0.11.0/24
+  PrivateSubnet2Cidr:
+    Type: String
+    Default: 10.0.12.0/24
+
+  # -------- frontend bucket --------
+  FrontendBucketName:
+    Type: String
+    Default: nutribyte-frontend-bucket
+
+  # -------- Docker image tag to deploy (updated by pipeline) --------
+  DockerImageTag:
+    Type: String
+    Default: latest
+
+  # -------- GitHub source info for CodePipeline --------
+  GitHubOwner:
+    Type: String
+    Description: GitHub user or org owning the NutriByte repo
+    Default: hervekaffo
+  GitHubRepo:
+    Type: String
+    Description: GitHub repository name
+    Default: NutriByte
+  GitHubBranch:
+    Type: String
+    Description: Branch to build
+    Default: main
+  GitHubOAuthToken:
+    Type: String
+    NoEcho: true
+    Description: GitHub personal access token (store in Secrets Manager)
+
+Resources:
+  ### VPC & Subnets ###
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsHostnames: true
+
+  InternetGateway: { Type: AWS::EC2::InternetGateway }
+  AttachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: { VpcId: !Ref VPC, InternetGatewayId: !Ref InternetGateway }
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnet1Cidr
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnet2Cidr
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnet1Cidr
+      AvailabilityZone: !Select [0, !GetAZs '']
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnet2Cidr
+      AvailabilityZone: !Select [1, !GetAZs '']
+
+  # Routing for public subnets
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: { VpcId: !Ref VPC }
+  PublicDefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  PublicSubnet1Route:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: { SubnetId: !Ref PublicSubnet1, RouteTableId: !Ref PublicRouteTable }
+  PublicSubnet2Route:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: { SubnetId: !Ref PublicSubnet2, RouteTableId: !Ref PublicRouteTable }
+
+  # NAT + private routing
+  NatEIP1: { Type: AWS::EC2::EIP, Properties: { Domain: vpc } }
+  NatGW1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      AllocationId: !GetAtt NatEIP1.AllocationId
+
+  NatEIP2: { Type: AWS::EC2::EIP, Properties: { Domain: vpc } }
+  NatGW2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      AllocationId: !GetAtt NatEIP2.AllocationId
+
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties: { VpcId: !Ref VPC }
+  PrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGW1
+  PrivateSubnet1Route:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable1
+
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties: { VpcId: !Ref VPC }
+  PrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGW2
+  PrivateSubnet2Route:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable2
+
+  ### Security Groups ###
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB SG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp; FromPort: 80; ToPort: 80; CidrIp: 0.0.0.0/0
+
+  EcsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ECS SG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp; FromPort: 5000; ToPort: 5000; SourceSecurityGroupId: !Ref AlbSecurityGroup
+
+  DocDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: DocDB SG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp; FromPort: 27017; ToPort: 27017; SourceSecurityGroupId: !Ref EcsSecurityGroup
+
+  ### DocumentDB ###
+  DocDBSubnetGroup:
+    Type: AWS::DocDB::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: "DocDB subnets"
+      SubnetIds: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
+
+  NutriByteDocDBCluster:
+    Type: AWS::DocDB::DBCluster
+    Properties:
+      Engine: docdb
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBSubnetGroupName: !Ref DocDBSubnetGroup
+      VpcSecurityGroupIds: [ !Ref DocDBSecurityGroup ]
+      BackupRetentionPeriod: 5
+      StorageEncrypted: true
+
+  NutriByteDocDBInstance1:
+    Type: AWS::DocDB::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref NutriByteDocDBCluster
+      DBInstanceClass: db.r5.large
+  NutriByteDocDBInstance2:
+    Type: AWS::DocDB::DBInstance
+    Properties:
+      DBClusterIdentifier: !Ref NutriByteDocDBCluster
+      DBInstanceClass: db.r5.large
+
+  ### ECR Repository ###
+  BackendRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: nutribyte-backend
+
+  ### ECS Cluster & Task Execution ###
+  EcsCluster: { Type: AWS::ECS::Cluster }
+
+  EcsTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ecs-tasks.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  BackendLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/nutribyte-backend
+      RetentionInDays: 14
+
+  AppLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      Subnets: [ !Ref PublicSubnet1, !Ref PublicSubnet2 ]
+      SecurityGroups: [ !Ref AlbSecurityGroup ]
+
+  BackendTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Port: 5000
+      Protocol: HTTP
+      VpcId: !Ref VPC
+      TargetType: ip
+      HealthCheckPath: /api/health
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref AppLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref BackendTargetGroup
+
+  BackendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: nutribyte-backend
+      Cpu: '512'
+      Memory: '1024'
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [ FARGATE ]
+      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: backend
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/nutribyte-backend:${DockerImageTag}'
+          PortMappings: [ { ContainerPort: 5000, Protocol: tcp } ]
+          Environment:
+            - Name: MONGO_URI
+              Value: !Join [ '', [
+                'mongodb://', !Ref DBUsername, ':', !Ref DBPassword,
+                '@', !GetAtt NutriByteDocDBCluster.Endpoint,
+                ':27017/nutribyte?ssl=true&replicaSet=rs0&retryWrites=false'
+              ]]
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref BackendLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+
+  BackendService:
+    Type: AWS::ECS::Service
+    DependsOn: HttpListener
+    Properties:
+      Cluster: !Ref EcsCluster
+      LaunchType: FARGATE
+      DesiredCount: 2
+      TaskDefinition: !Ref BackendTaskDefinition
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets: [ !Ref PrivateSubnet1, !Ref PrivateSubnet2 ]
+          SecurityGroups: [ !Ref EcsSecurityGroup ]
+          AssignPublicIp: DISABLED
+      LoadBalancers:
+        - ContainerName: backend
+          ContainerPort: 5000
+          TargetGroupArn: !Ref BackendTargetGroup
+
+  ### Frontend on S3 + CloudFront ###
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref FrontendBucketName
+      AccessControl: Private
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Statement:
+          - Sid: AllowCloudFrontGet
+            Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: !Sub 'arn:aws:s3:::${FrontendBucketName}/*'
+
+  FrontendOAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: NutriByte OAI
+
+  FrontendDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Origins:
+          - Id: s3-nutribyte
+            DomainName: !GetAtt FrontendBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${FrontendOAI}'
+        DefaultCacheBehavior:
+          TargetOriginId: s3-nutribyte
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+  ### CI/CD: CodeBuild role ###
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: { Service: codebuild.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+        - arn:aws:iam::aws:policy/AWSCodePipeline_ReadOnly
+
+  ### CI/CD: CodePipeline artifact bucket ###
+  PipelineArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  ### CI/CD: Pipeline service role ###
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: { Service: codepipeline.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
+        - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AmazonECS_FullAccess
+        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+
+  ### CI/CD: CodeBuild project ###
+  BackendBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: nutribyte-backend-build
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts: { Type: CODEPIPELINE }
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:6.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+      Source: { Type: CODEPIPELINE, BuildSpec: buildspec.yml }
+
+  ### CI/CD: CodePipeline ###
+  NutriBytePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt PipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHub_Source
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: '1'
+              Configuration:
+                Owner: !Ref GitHubOwner
+                Repo: !Ref GitHubRepo
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubOAuthToken
+                PollForSourceChanges: false
+              OutputArtifacts: [SourceOutput]
+              RunOrder: 1
+
+        - Name: Build
+          Actions:
+            - Name: CodeBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              InputArtifacts: [SourceOutput]
+              OutputArtifacts: [BuildOutput]
+              Configuration:
+                ProjectName: !Ref BackendBuild
+              RunOrder: 1
+
+        - Name: Deploy
+          Actions:
+            - Name: CFN_Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE
+                StackName: NutriByteFullInfra
+                ChangeSetName: NutriByteChangeSet
+                Capabilities: CAPABILITY_NAMED_IAM
+                TemplatePath: BuildOutput::nutribyte-full-infra.yml
+                ParameterOverrides: !Sub |
+                  {
+                    "DockerImageTag":"${BuildOutput:IMAGE_TAG}"
+                  }
+              InputArtifacts: [BuildOutput]
+              RunOrder: 1
+
+Outputs:
+  BackendURL:
+    Description: "ALB DNS name"
+    Value: !GetAtt AppLoadBalancer.DNSName
+  FrontendURL:
+    Description: "CloudFront domain"
+    Value: !GetAtt FrontendDistribution.DomainName
