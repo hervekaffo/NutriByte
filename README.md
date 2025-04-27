@@ -16,10 +16,16 @@
 
 ## Features
 
-- User profile 
-- Admin product management
-- Admin user management
-- Database seeder (products & users)
+- User profile(Registration, Login, Logout, Profile picture, Profile Update)
+- Admin User and Food Management
+- Food Search
+- Food Rating
+- Meal Builder
+- Nutrition Logs
+- Nutrition Goals(Set and Compare)
+- Nutrition Graphs
+- AI Nutrition Suggestions from Nutrition Logs Data
+- Database seeder (Food, users, Nutrition Logs)
 
 ## Usage
 
