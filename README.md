@@ -97,6 +97,17 @@ john@email.com (Customer)
 jane@email.com (Customer)
 123456
 ```
+# NutriByte MERN CI/CD
+
+## 1. Prerequisites
+- AWS CLI v2 configured (`aws configure`)
+- GitHub Personal Access Token with `repo` & `admin:repo_hook` scopes
+
+## 2. Local env files
+Copy and fill in real values:
+```bash
+
+
 
 ---
 
