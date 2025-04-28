@@ -45,7 +45,11 @@ const foodSchema = new mongoose.Schema(
     householdServingFullText: { type: String }, // Text for common serving size
     brandedFoodCategory: { type: String }, // Category of the food item
     publicationDate: { type: Date }, // Date when data was published
-    image: { type: String }, // URL for food image
+    image: {
+      type: String,
+      required: false,
+      default: '/images/sample.jpg',
+    }, // URL for food image
     // Reference to the Macro model
     macros: {
       type: mongoose.Schema.Types.ObjectId,

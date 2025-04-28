@@ -68,24 +68,6 @@ const FoodScreen = () => {
     }
   };
 
-  const [imageList, setImageList] = useState([]);
-
-useEffect(() => {
-  const fetchImages = async () => {
-    try {
-      const res = await fetch('/food_images', {
-        headers: { Accept: 'application/json' },
-      });
-      if (!res.ok) throw new Error('Failed to fetch images');
-      const data = await res.json();
-      setImageList(data.map((img) => ({ src: img, width: 300, height: 300 })));
-    } catch (err) {
-      console.error('Image fetch error:', err);
-    }
-  };
-  fetchImages();
-}, []);
-
   return (
     <>
       <Link className='btn btn-light my-3' to='/'>
@@ -102,21 +84,12 @@ useEffect(() => {
           <Meta title={food.fdcId} description={food.description} />
           <Row>
           <Col md={6}>
-  {imageList.length > 0 ? (
     <Image
-      src={`/food_images/${getConsistentImage(imageList, food._id)}`}
+      src={food.image}
       alt={food.fdcId}
       fluid
       style={{ height: '300px', objectFit: 'cover' }}
     />
-  ) : (
-    <Image
-      src='/images/sample.jpg'
-      alt='Default'
-      fluid
-      style={{ height: '300px', objectFit: 'cover' }}
-    />
-  )}
 </Col>
 
             <Col md={3}>

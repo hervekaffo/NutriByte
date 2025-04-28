@@ -47,7 +47,9 @@ const SaveLogScreen = () => {
   const openModal = (id) => {
     setSelectedFoodId(id);
     setShowModal(true);
-    refetchModalFood();
+    if (selectedFoodId) {
+      refetchModalFood();
+    }
   };
   const closeModal = () => {
     setShowModal(false);
@@ -108,7 +110,18 @@ const SaveLogScreen = () => {
               style={{ cursor: 'pointer' }}
               onClick={() => openModal(item._id)}
             >
-              {item.brandOwner} × {item.qty}
+              <Row>
+                <Col xs={3}>
+                  <img
+                    src={item.image || '/placeholder-image.png'}
+                    alt={item.description}
+                    style={{ width: '40%', borderRadius: '5px' }}
+                  />
+                </Col>
+                <Col xs={9}>
+                  {item.brandOwner} × {item.qty}
+                </Col>
+              </Row>
             </ListGroup.Item>
           ))}
         </ListGroup>

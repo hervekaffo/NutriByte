@@ -1,5 +1,4 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { updateMeal } from '../utils/mealUtils';
 
 const initialState = localStorage.getItem('meal')
   ? JSON.parse(localStorage.getItem('meal'))
@@ -23,20 +22,9 @@ const mealSlice = createSlice({
       } else {
         state.mealItems = [...state.mealItems, item];
       }
-
-      return updateMeal(state, item);
     },
     removeFromMeal: (state, action) => {
       state.mealItems = state.mealItems.filter((x) => x._id !== action.payload);
-      return updateMeal(state);
-    },
-    saveShippingAddress: (state, action) => {
-      state.shippingAddress = action.payload;
-      localStorage.setItem('meal', JSON.stringify(state));
-    },
-    savePaymentMethod: (state, action) => {
-      state.paymentMethod = action.payload;
-      localStorage.setItem('meal', JSON.stringify(state));
     },
     clearMealItems: (state, action) => {
       state.mealItems = [];
@@ -51,8 +39,6 @@ const mealSlice = createSlice({
 export const {
   addToMeal,
   removeFromMeal,
-  saveShippingAddress,
-  savePaymentMethod,
   clearMealItems,
   resetMeal,
 } = mealSlice.actions;
