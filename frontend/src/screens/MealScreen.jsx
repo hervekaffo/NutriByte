@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { FaTrash } from 'react-icons/fa';
 import {
   Row,
   Col,
@@ -175,13 +176,13 @@ const MealScreen = () => {
                     </Col>
                     <Col xs={6}>{item.brandOwner}</Col>
                     <Col xs={4} className="text-end">
-                      <Button
-                        variant="light"
-                        size="sm"
-                        onClick={() => removeHandler(item._id)}
-                      >
-                        Remove
-                      </Button>
+                    <Button
+                      type='button'
+                      variant='light'
+                      onClick={() => removeHandler(item._id)}
+                    >
+                      <FaTrash />
+                    </Button>
                     </Col>
                   </Row>
                 </ListGroup.Item>
