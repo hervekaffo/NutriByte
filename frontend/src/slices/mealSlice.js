@@ -2,7 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = localStorage.getItem('meal')
   ? JSON.parse(localStorage.getItem('meal'))
-  : { mealItems: [], shippingAddress: {}, paymentMethod: 'PayPal' };
+  : { mealItems: []};
 
 const mealSlice = createSlice({
   name: 'meal',
