@@ -2,6 +2,11 @@
 
 > Food Tracking App built with the MERN stack & Redux.
 
+This is a MERN project using Redux Toolkit, Chart JS and OpenAI API. 
+Here is the live Demo [NutriByte](https://nutribyte-2.onrender.com)
+
+<img src="./frontend/public/images/UIs.png">
+
 <!-- toc -->
 
 - [Features](#features)
@@ -88,25 +93,24 @@ npm run data:destroy
 ```
 Sample User Logins
 
-admin@email.com (Admin)
+mike@email.com (Admin)
 123456
 
-john@email.com (Customer)
+mbout@email.com (Customer)
 123456
 
-jane@email.com (Customer)
+bob@email.com (Customer)
+123456
+
+admin@email.com (Customer)
 123456
 ```
-# NutriByte MERN CI/CD
+# NutriByte MERN CI/CD on AWS
 
 ## 1. Prerequisites
-- AWS CLI v2 configured (`aws configure`)
-- GitHub Personal Access Token with `repo` & `admin:repo_hook` scopes
-
-## 2. Local env files
-Copy and fill in real values:
-```bash
-
+- This project was also deploy on AWS using AWS Cloud services and setup a high availability server 
+on a completely different project.
+```
 
 
 ---

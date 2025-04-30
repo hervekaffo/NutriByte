@@ -22,11 +22,14 @@ const LoginScreen = () => {
 
   const { search } = useLocation();
   const sp = new URLSearchParams(search);
-  const redirect = sp.get('redirect') || '/';
+  const redirect = sp.get('redirect');
+
+  // if no redirect provided, navigate(-1) will go back one step
+  const goTo = redirect ? redirect : -1;
 
   useEffect(() => {
     if (userInfo) {
-      navigate(redirect);
+      navigate(goTo);
     }
   }, [navigate, redirect, userInfo]);
 
@@ -35,7 +38,7 @@ const LoginScreen = () => {
     try {
       const res = await login({ email, password }).unwrap();
       dispatch(setCredentials({ ...res }));
-      navigate(redirect);
+      navigate(goTo);
     } catch (err) {
       toast.error(err?.data?.message || err.error);
     }
