@@ -31,7 +31,7 @@ const LoginScreen = () => {
     if (userInfo) {
       navigate(goTo);
     }
-  }, [navigate, redirect, userInfo]);
+  }, [navigate, redirect, userInfo, goTo]);
 
   const submitHandler = async (e) => {
     e.preventDefault();

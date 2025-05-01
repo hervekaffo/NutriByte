@@ -50,9 +50,6 @@ const GoalScreen = () => {
     }
   }, [goal]);
 
-  // Decide if we’re in “create” mode (no goal) vs “edit” mode
-  const isNotFound = isError && error.status === 404;
-
   const submitHandler = async (e) => {
     e.preventDefault();
     try {

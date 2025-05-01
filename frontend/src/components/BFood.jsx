@@ -1,8 +1,6 @@
 import { Card } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import Rating from "./Rating";
-import { getConsistentImage } from "../utils/imageUtils";
-import { useEffect, useState } from "react";
 
 const BFood = ({ food }) => {
   // const getRandomImage = (images) => {

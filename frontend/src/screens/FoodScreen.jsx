@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -21,12 +21,10 @@ import Loader from '../components/Loader';
 import Message from '../components/Message';
 import Meta from '../components/Meta';
 import { addToMeal } from '../slices/mealSlice';
-import { getConsistentImage } from '../utils/imageUtils';
 
 const FoodScreen = () => {
   const { id: foodId } = useParams();
-  const location = useLocation();
-  const passedImage = location.state?.image; 
+  const location = useLocation(); 
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
