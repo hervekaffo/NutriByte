@@ -23,8 +23,7 @@ import Meta from '../components/Meta';
 import { addToMeal } from '../slices/mealSlice';
 
 const FoodScreen = () => {
-  const { id: foodId } = useParams();
-  const location = useLocation(); 
+  const { id: foodId } = useParams(); 
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
