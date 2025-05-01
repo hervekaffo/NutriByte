@@ -96,13 +96,13 @@ Sample User Logins
 mike@email.com (Admin)
 123456
 
-mbout@email.com (Customer)
+mbout@email.com (User)
 123456
 
-bob@email.com (Customer)
+bob@email.com (User)
 123456
 
-admin@email.com (Customer)
+admin@email.com (User)
 123456
 ```
 # NutriByte MERN CI/CD on AWS
