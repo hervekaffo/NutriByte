@@ -1,15 +1,13 @@
-# .github/workflows/ci-cd-heroku.yml
 name: CI → Heroku CD
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ]   # or change to 'master' if your default branch is named master
 
 jobs:
-  build:
-    name: 🔨 Install & Build
+  build-and-test:
+    name: 🔨 Build & Test
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -19,18 +17,22 @@ jobs:
         with:
           node-version: '22.x'
 
-      - name: Install root dependencies
+      - name: Install dependencies
         run: npm ci
 
       - name: Build frontend & backend
+        env:
+          CI: false
         run: npm run build
+
+      - name: Run tests
+        run: npm test
 
   deploy:
     name: 🚀 Deploy to Heroku
-    needs: build
     runs-on: ubuntu-latest
-    if: ${{ needs.build.result == 'success' }}
-
+    needs: build-and-test
+    if: ${{ needs.build-and-test.result == 'success' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -42,8 +44,7 @@ jobs:
       - name: Authenticate with Heroku
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: |
-          echo "$HEROKU_API_KEY" | heroku auth:token
+        run: echo "$HEROKU_API_KEY" | heroku auth:token
 
       - name: Push to Heroku
         env:
