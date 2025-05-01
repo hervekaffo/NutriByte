@@ -31,7 +31,7 @@ const FoodScreen = () => {
   const [qty, setQty] = useState(1);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
-
+//  const [imageList, setImageList] = useState([]);
   const addToMealHandler = () => {
     dispatch(addToMeal({ ...food, qty }));
     navigate('/meal');
