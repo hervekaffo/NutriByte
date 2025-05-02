@@ -1,8 +1,9 @@
 name: CI → Heroku CD
 
+# Trigger on pushes to your default branch
 on:
   push:
-    branches: [ main ]   
+    branches: [ main ]   # change to 'master' if that's your default
 
 jobs:
   build-and-test:
@@ -12,15 +13,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Use Node.js v20
+      - name: Use Node.js v22
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: '22.x'
 
-      - name: Install backend deps
+      - name: Install backend dependencies
         run: npm ci
 
-      - name: Install frontend deps
+      - name: Install frontend dependencies
         run: npm ci --prefix frontend
 
       - name: Build frontend (ignore CRA warnings)
@@ -39,14 +40,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Add Heroku remote with API key
+      - name: Install Heroku CLI
         run: |
-          # Remove any existing heroku remote
-          git remote remove heroku || true
-          # Embed API key into the remote URL for HTTPS auth:
-          git remote add heroku https://heroku:${{ secrets.HEROKU_API_KEY }}@git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
+          curl https://cli-assets.heroku.com/install.sh | sh
 
-      - name: Push to Heroku
+      - name: Authenticate with Heroku
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
-          git push heroku HEAD:main --force
-          # Ensure the branch is explicitly set to 'main' or 'master' as required by Heroku
+          echo "$HEROKU_API_KEY" | heroku auth:token
+
+      - name: Add Heroku remote
+        run: |
+          # Remove any old heroku remote (ignore errors if none)
+          git remote remove heroku || true
+          # Use the Heroku CLI to set the correct remote
+          heroku git:remote -a nutribyteheroku
+
+      - name: Deploy to Heroku
+        run: |
+          # Deploy your main branch (or master if that's your branch)
+          git push heroku main --force
