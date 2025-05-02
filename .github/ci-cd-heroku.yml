@@ -2,13 +2,12 @@ name: CI → Heroku CD
 
 on:
   push:
-    branches: [ main ]   # or change to 'master' if that's your default branch
+    branches: [ main ]   # adjust if your default is 'master'
 
 jobs:
   build-and-test:
     name: 🔨 Build & Test
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -36,14 +35,17 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     if: ${{ needs.build-and-test.result == 'success' }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy to Heroku via Git
+      - name: Add Heroku remote with API key
         run: |
-          # Add Heroku remote with API key embedded for HTTPS auth
+          # Remove any existing heroku remote
+          git remote remove heroku || true
+          # Embed API key into the remote URL for HTTPS auth:
           git remote add heroku https://heroku:${{ secrets.HEROKU_API_KEY }}@git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
-          # Push your main branch
+
+      - name: Push to Heroku
+        run: |
           git push heroku HEAD:main --force
