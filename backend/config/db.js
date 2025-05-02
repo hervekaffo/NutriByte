@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const connectDB = async () => {
+  // ───── Skip real DB connection during Jest tests ─────
+  if (process.env.NODE_ENV === 'test') {
+    return;
+  }
+
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
@@ -8,9 +13,7 @@ const connectDB = async () => {
     });
 
     // Only log when NOT in Jest tests
-    if (process.env.NODE_ENV !== 'test') {
-      console.log(`MongoDB Connected: ${conn.connection.host}`);
-    }
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`Error: ${error.message}`);
     process.exit(1);
