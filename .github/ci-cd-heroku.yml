@@ -1,9 +1,8 @@
-# .github/workflows/ci-cd-heroku.yml
 name: CI → Heroku CD
 
 on:
   push:
-    branches: [ main ]  # or replace with 'master' if that’s your branch
+    branches: [ main ]   
 
 jobs:
   build-and-test:
@@ -13,10 +12,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Use Node.js v22
+      - name: Use Node.js v20
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'
+          node-version: '20.x'
 
       - name: Install backend deps
         run: npm ci
@@ -40,20 +39,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Git
-        run: sudo apt-get update && sudo apt-get install -y git
-
-      - name: Initialize Git
+      - name: Add Heroku remote with API key
         run: |
-          if [ ! -d ".git" ]; then
-            git init
-            git remote add origin https://github.com/${{ github.repository }}.git
-          fi
-          git remote add heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
+          # Remove any existing heroku remote
+          git remote remove heroku || true
+          # Embed API key into the remote URL for HTTPS auth:
+          git remote add heroku https://heroku:${{ secrets.HEROKU_API_KEY }}@git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
 
-      - name: Deploy to Heroku
-        uses: akhileshns/heroku-deploy@v3
-        with:
-          heroku_api_key:   ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name:  ${{ secrets.HEROKU_APP_NAME }}
-          heroku_email:     ${{ secrets.HEROKU_EMAIL }}
+      - name: Push to Heroku
+        run: |
+          git push heroku HEAD:main --force
+          # Ensure the branch is explicitly set to 'main' or 'master' as required by Heroku
