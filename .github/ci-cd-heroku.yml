@@ -2,7 +2,7 @@ name: CI → Heroku CD
 
 on:
   push:
-    branches: [ main ]   # change to master if needed
+    branches: [ main ]   # or change to 'master' if that's your default branch
 
 jobs:
   build-and-test:
@@ -24,10 +24,8 @@ jobs:
       - name: Install frontend deps
         run: npm ci --prefix frontend
 
-      - name: Build frontend & backend (ignore CRA warnings)
+      - name: Build frontend (ignore CRA warnings)
         run: |
-          # build backend if you had any backend build step (otherwise skip)
-          # now build React app with CI=false so warnings won't fail
           CI=false npm run build --prefix frontend
 
       - name: Run tests
@@ -43,18 +41,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Heroku CLI
+      - name: Deploy to Heroku via Git
         run: |
-          curl https://cli-assets.heroku.com/install.sh | sh
-
-      - name: Authenticate with Heroku
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: echo "$HEROKU_API_KEY" | heroku auth:token
-
-      - name: Push to Heroku
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: |
-          git remote add heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
+          # Add Heroku remote with API key embedded for HTTPS auth
+          git remote add heroku https://heroku:${{ secrets.HEROKU_API_KEY }}@git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
+          # Push your main branch
           git push heroku HEAD:main --force
