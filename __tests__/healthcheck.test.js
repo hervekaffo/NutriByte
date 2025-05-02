@@ -1,3 +1,5 @@
+//provide a fake key so suggestionController’s OpenAI instantiation won’t throw
+process.env.OPENAI_API_KEY = 'test';
 import request from 'supertest';
 import app from '../backend/server.js';
 import mongoose from 'mongoose';
