@@ -2,57 +2,51 @@ name: CI → Heroku CD
 
 on:
   push:
-    branches: [ main ]   # or 'master' if that's your default branch
+    branches: [ main ]  # or "master" if that’s your default branch
 
 jobs:
   build-and-test:
-    name: 🔨 Build & Test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Ensure full history for Git commands
 
       - name: Use Node.js v22
         uses: actions/setup-node@v3
         with:
-          node-version: "22.x"
+          node-version: '22.x'
 
-      - name: Install backend dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Install frontend dependencies
-        run: npm ci --prefix frontend
-
-      - name: Build frontend (ignore CRA warnings)
-        run: |
-          CI=false npm run build --prefix frontend
+      - name: Build frontend & backend
+        run: npm run build
 
       - name: Run tests
         run: npm test
 
   deploy:
-    name: 🚀 Deploy to Heroku
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: ${{ needs.build-and-test.result == 'success' }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+  needs: build-and-test
+  runs-on: ubuntu-latest
+  if: ${{ needs.build-and-test.result == 'success' }}
+  steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Fetch all history for all branches
 
-      - name: Push to Heroku
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: |
-          # Ensure Git is initialized (Actions does this by default, but just in case)
-          git init
+    - name: Install Heroku CLI
+      run: |
+        curl https://cli-assets.heroku.com/install.sh | sh
 
-          # Reconfigure the heroku remote
-          git remote remove heroku || true
-          git remote add heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
+    - name: Authenticate with Heroku
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+      run: echo "$HEROKU_API_KEY" | heroku auth:token
 
-          # Stage and commit all changes
-          git add .
-          git commit -m "Deploy to Heroku via GitHub Actions"
-
-          # Push to your Heroku app; replace 'main' if you use 'master'
-          git push heroku HEAD:main --force
+    - name: Push to Heroku
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+      run: |
+        git remote add heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
+        git push heroku HEAD:main --force
