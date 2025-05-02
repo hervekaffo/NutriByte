@@ -9,8 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Ensure full history for Git commands
 
       - name: Use Node.js v22
         uses: actions/setup-node@v3
@@ -32,8 +30,6 @@ jobs:
     if: ${{ needs.build-and-test.result == 'success' }}
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Ensure full history for Git commands
 
       - name: Install Heroku CLI
         run: |
@@ -48,5 +44,8 @@ jobs:
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
+          git init  # Ensure the repository is initialized
           git remote add heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
-          git push heroku HEAD:main --force
+          git add .  # Add all files to Git
+          git commit -m "Deploy to Heroku"  # Commit changes
+          git push heroku HEAD:main --force  # Push to Heroku
