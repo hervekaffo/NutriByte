@@ -1,18 +1,14 @@
-# File: .github/workflows/ci-cd-heroku.yml
 name: CI → Heroku CD
 
 on:
   push:
-    branches: [ main ]   # or change to master if that’s your default
+    branches: [ main ]    # or 'master' if that’s your branch
 
 jobs:
   build-and-test:
-    name: 🔨 Build & Test
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Use Node.js v22
         uses: actions/setup-node@v3
@@ -33,18 +29,15 @@ jobs:
         run: npm test
 
   deploy:
-    name: 🚀 Deploy to Heroku
     needs: build-and-test
     runs-on: ubuntu-latest
     if: ${{ needs.build-and-test.result == 'success' }}
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Deploy to Heroku
         uses: akhileshns/heroku-deploy@v3
         with:
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}    # from your repo’s Secrets
-          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}  # your app’s name, e.g. nutribyte-heroku
-          heroku_email: ${{ secrets.HEROKU_EMAIL }}        # your Heroku login email
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+          heroku_email:   ${{ secrets.HEROKU_EMAIL }}
