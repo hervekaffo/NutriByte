@@ -40,9 +40,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Install Git
+        run: sudo apt-get update && sudo apt-get install -y git
+
       - name: Initialize Git
         run: |
-          if [ ! -d ".git" ]; then git init; fi
+          if [ ! -d ".git" ]; then
+            git init
+            git remote add origin https://github.com/${{ github.repository }}.git
+          fi
           git remote add heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
 
       - name: Deploy to Heroku

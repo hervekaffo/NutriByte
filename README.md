@@ -105,13 +105,10 @@ bob@email.com (User)
 admin@email.com (User)
 123456
 ```
-# NutriByte MERN CI/CD on AWS
+# NutriByte MERN CI/CD on HEROKU
 
 ## 1. Prerequisites
-- This project was also deploy on AWS using AWS Cloud services and setup a high availability server 
-on a completely different project.
-```
+- This project was also deploy on HEROKU using Git actions
+The ynl file is in the .github/workflows folder
 
-
----
 
