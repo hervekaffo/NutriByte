@@ -2,7 +2,7 @@ name: CI → Heroku CD
 
 on:
   push:
-    branches: [ main ]  # or "master" if that’s your default branch
+    branches: [ main ]
 
 jobs:
   build-and-test:
@@ -30,12 +30,20 @@ jobs:
     if: ${{ needs.build-and-test.result == 'success' }}
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0  # Ensure the full history is cloned
+
+      - name: Initialize Git Repository
+        run: |
+          git init
+          git remote add origin https://github.com/${{ github.repository }}.git
+          git fetch origin ${{ github.ref_name }}
+          git reset --hard origin/${{ github.ref_name }}
 
       - name: Install Heroku CLI
         run: |
           curl https://cli-assets.heroku.com/install.sh | sh
+
+      - name: Verify Heroku CLI Installation
+        run: heroku --version
 
       - name: Authenticate with Heroku
         env:
@@ -46,5 +54,5 @@ jobs:
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
-          git remote add heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
+          git remote add heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git || true
           git push heroku HEAD:main --force
