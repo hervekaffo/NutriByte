@@ -3,7 +3,7 @@
 > Food Tracking App built with the MERN stack & Redux.
 
 This is a MERN project using Redux Toolkit, Chart JS and OpenAI API. 
-Here is the live Demo [NutriByte](https://nutribyte-2.onrender.com)
+Here is the live Demo [NutriByte](https://nutribyteheroku-f14834f227b8.herokuapp.com)
 
 <img src="./frontend/public/images/UIs.png">
 
