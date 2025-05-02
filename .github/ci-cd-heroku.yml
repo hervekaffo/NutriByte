@@ -2,37 +2,43 @@ name: CI → Heroku CD
 
 on:
   push:
-    branches: [ main ]   # or change to 'master' if your default branch is named master
+    branches: [ main ]   # change to master if needed
 
 jobs:
   build-and-test:
     name: 🔨 Build & Test
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Use Node.js 22
+      - name: Use Node.js v22
         uses: actions/setup-node@v3
         with:
           node-version: '22.x'
 
-      - name: Install dependencies
+      - name: Install backend deps
         run: npm ci
 
-      - name: Build frontend & backend
-        env:
-          CI: false
-        run: npm run build
+      - name: Install frontend deps
+        run: npm ci --prefix frontend
+
+      - name: Build frontend & backend (ignore CRA warnings)
+        run: |
+          # build backend if you had any backend build step (otherwise skip)
+          # now build React app with CI=false so warnings won't fail
+          CI=false npm run build --prefix frontend
 
       - name: Run tests
         run: npm test
 
   deploy:
     name: 🚀 Deploy to Heroku
-    runs-on: ubuntu-latest
     needs: build-and-test
+    runs-on: ubuntu-latest
     if: ${{ needs.build-and-test.result == 'success' }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

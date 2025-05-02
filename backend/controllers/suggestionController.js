@@ -8,9 +8,9 @@ import dotenv      from 'dotenv';
 dotenv.config();
 
 // Initialize the OpenAI client
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY, // make sure this is set in your .env
-});
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 // @desc    Get AI nutrition suggestions based on latest log & goal
 // @route   GET /api/suggestions/nutrition
