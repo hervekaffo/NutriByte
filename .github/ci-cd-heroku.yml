@@ -42,7 +42,7 @@ jobs:
 
       - name: Initialize Git
         run: |
-          git init
+          if [ ! -d ".git" ]; then git init; fi
           git remote add heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
 
       - name: Deploy to Heroku
