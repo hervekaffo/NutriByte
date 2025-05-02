@@ -1,9 +1,8 @@
 name: CI → Heroku CD
 
-# Trigger on pushes to your default branch
 on:
   push:
-    branches: [ main ]   # change to 'master' if that's your default
+    branches: [ main ]   # or 'master' if that's your default branch
 
 jobs:
   build-and-test:
@@ -16,7 +15,7 @@ jobs:
       - name: Use Node.js v22
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'
+          node-version: "22.x"
 
       - name: Install backend dependencies
         run: npm ci
@@ -40,24 +39,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Heroku CLI
-        run: |
-          curl https://cli-assets.heroku.com/install.sh | sh
-
-      - name: Authenticate with Heroku
+      - name: Push to Heroku
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
-          echo "$HEROKU_API_KEY" | heroku auth:token
+          # Ensure Git is initialized (Actions does this by default, but just in case)
+          git init
 
-      - name: Add Heroku remote
-        run: |
-          # Remove any old heroku remote (ignore errors if none)
+          # Reconfigure the heroku remote
           git remote remove heroku || true
-          # Use the Heroku CLI to set the correct remote
-          heroku git:remote -a nutribyteheroku
+          git remote add heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
 
-      - name: Deploy to Heroku
-        run: |
-          # Deploy your main branch (or master if that's your branch)
-          git push heroku main --force
+          # Stage and commit all changes
+          git add .
+          git commit -m "Deploy to Heroku via GitHub Actions"
+
+          # Push to your Heroku app; replace 'main' if you use 'master'
+          git push heroku HEAD:main --force
