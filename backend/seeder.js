@@ -1,6 +1,4 @@
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import colors from 'colors';
 import users from './data/users.js';
 import foods from './data/branded_food.js';
 import User from './models/userModel.js';

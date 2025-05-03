@@ -2,6 +2,7 @@
 import path from 'path';
 import express from 'express';
 import multer from 'multer';
+import fs from 'fs';
 const router = express.Router();
 
 const storage = multer.diskStorage({
@@ -26,7 +27,15 @@ const upload = multer({ storage, fileFilter });
 router.post('/', upload.single('picture'), (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
   // serve later from /images/user_images/<filename>
-  res.status(201).json({ picture: `/images/user_images/${req.file.filename}` });
+  const sourcePath = `images/user_images/${req.file.filename}`;
+  const destinationPath = `frontend/public/images/user_images/${req.file.filename}`;
+
+  fs.copyFile(sourcePath, destinationPath, (err) => {
+    if (err) {
+      return res.status(500).json({ message: 'Error copying file', error: err.message });
+    }
+    res.status(201).json({ picture: `/images/user_images/${req.file.filename}` });
+  });
 });
 
 export default router;
