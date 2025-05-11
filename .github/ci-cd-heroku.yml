@@ -9,8 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+<<<<<<< HEAD
         with:
           fetch-depth: 0  # Ensure full history for Git commands
+=======
+>>>>>>> 0bf1b5c898b2aaec23deec45b9caba2768a85346
 
       - name: Use Node.js v22
         uses: actions/setup-node@v3
@@ -27,6 +30,7 @@ jobs:
         run: npm test
 
   deploy:
+<<<<<<< HEAD
   needs: build-and-test
   runs-on: ubuntu-latest
   if: ${{ needs.build-and-test.result == 'success' }}
@@ -50,3 +54,28 @@ jobs:
       run: |
         git remote add heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
         git push heroku HEAD:main --force
+=======
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: ${{ needs.build-and-test.result == 'success' }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Ensures the full history is fetched, including the .git folder
+
+      - name: Install Heroku CLI
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
+
+      - name: Authenticate with Heroku
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: echo "$HEROKU_API_KEY" | heroku auth:token
+
+      - name: Push to Heroku
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          git remote set-url heroku https://git.heroku.com/${{ secrets.HEROKU_APP_NAME }}.git
+          git push heroku HEAD:main --force
+>>>>>>> 0bf1b5c898b2aaec23deec45b9caba2768a85346
